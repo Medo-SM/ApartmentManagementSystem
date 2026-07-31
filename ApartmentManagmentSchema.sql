@@ -11,7 +11,8 @@ CREATE TABLE Tenants (
     FullName NVARCHAR(100) NOT NULL,
     PhoneNumber VARCHAR(20) NOT NULL,
     EmergencyContact VARCHAR(20) NULL,
-    CreatedAt DATETIME DEFAULT GETDATE()
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME DEFAULT GETDATE()
 );
 
 -- 2. Apartments Table
@@ -19,6 +20,7 @@ CREATE TABLE Apartments (
     ApartmentID INT IDENTITY(1,1) PRIMARY KEY,
     UnitNumber NVARCHAR(20) NOT NULL UNIQUE,
     FloorNumber INT NOT NULL,
+    NumberOfRooms INT NOT NULL,
     MonthlyRent DECIMAL(10, 2) NOT NULL CHECK (MonthlyRent >= 0),
     OccupancyStatus NVARCHAR(20) DEFAULT 'Vacant' CHECK (OccupancyStatus IN ('Vacant', 'Occupied', 'Maintenance')),
     CurrentTenantID INT NULL,
