@@ -69,3 +69,34 @@ CREATE TABLE Parcels (
         REFERENCES Tenants(TenantID)
 );
 GO
+
+-- 1. Roles Table (Lookup table for roles)
+CREATE TABLE Roles (
+    RoleID INT IDENTITY(1,1) PRIMARY KEY,
+    RoleName NVARCHAR(50) NOT NULL UNIQUE -- E.g., 'Building Owner', 'Building Manager', 'Tenant'
+);
+
+-- Seed Initial Roles
+INSERT INTO Roles (RoleName) VALUES 
+('Building Owner'), 
+('Building Manager'), 
+('Tenant');
+
+-- 2. Users Table
+CREATE TABLE Users (
+    UserID INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(50) NOT NULL UNIQUE,
+    Email NVARCHAR(100) NOT NULL UNIQUE,
+    PasswordHash NVARCHAR(256) NOT NULL, -- Always store hashes, never plain text
+    RoleID INT NOT NULL,
+    TenantID INT NULL, -- NULL for Owners & Managers; populated when a Tenant gets an app account
+    IsActive BIT DEFAULT 1 NOT NULL,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    
+    CONSTRAINT FK_Users_Roles FOREIGN KEY (RoleID) 
+        REFERENCES Roles(RoleID),
+    CONSTRAINT FK_Users_Tenants FOREIGN KEY (TenantID) 
+        REFERENCES Tenants(TenantID) ON DELETE SET NULL,
+    CONSTRAINT UQ_Users_TenantID UNIQUE (TenantID) -- Ensures 1-to-1 link between User and Tenant profile
+);
+GO
