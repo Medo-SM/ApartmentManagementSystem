@@ -1,9 +1,9 @@
 namespace ApartmentManagementSystem.Core.Domain.Entities
 {
-using ApartmentManagmentSystem.Core.Domain.Entities;
-using System;
-using ApartmentManagementSystem.Core.Domain.Entities.Base;    
-public class Parcel : BaseEntity
+    using System;
+    using ApartmentManagementSystem.Core.Domain.Entites.Base;
+
+    public class Parcel : BaseEntity
     {
         // Foreign Key properties
         public int TenantId { get; set; }

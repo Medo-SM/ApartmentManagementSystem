@@ -1,9 +1,11 @@
 namespace ApartmentManagmentSystem.Core.Domain.Entities
 {
-using ApartmentManagmentSystem.Core.Domain.Entities;
-using System;
-using ApartmentManagementSystem.Core.Domain.Entities.Base;
-public class Apartment : BaseEntity
+    using ApartmentManagement.Core.Domain.Entities;
+    using ApartmentManagementSystem.Core.Domain.Entites.Base;
+    using ApartmentManagementSystem.Core.Domain.Entities;
+    using System.Collections.Generic;
+
+    public class Apartment : BaseEntity
 {
 
     public string UnitNumber { get; set; } = string.Empty;

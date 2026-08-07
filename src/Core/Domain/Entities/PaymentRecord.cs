@@ -1,8 +1,9 @@
+using ApartmentManagementSystem.Core.Domain.Entites.Base;
+using ApartmentManagementSystem.Core.Domain.Entities;
+using ApartmentManagmentSystem.Core.Domain.Entities;
+
 namespace ApartmentManagement.Core.Domain.Entities
 {
-using ApartmentManagmentSystem.Core.Domain.Entities;
-using System;
-using ApartmentManagementSystem.Core.Domain.Entities.Base;
 public class PaymentRecord : BaseEntity
 {
 

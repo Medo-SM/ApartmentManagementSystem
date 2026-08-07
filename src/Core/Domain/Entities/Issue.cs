@@ -1,9 +1,10 @@
 namespace ApartmentManagementSystem.Core.Domain.Entities
 {
-using ApartmentManagmentSystem.Core.Domain.Entities;
-using System;
-using ApartmentManagementSystem.Core.Domain.Entities.Base;
-public class Issue : BaseEntity
+    using ApartmentManagmentSystem.Core.Domain.Entities;
+    using System;
+    using ApartmentManagementSystem.Core.Domain.Entites.Base;
+
+    public class Issue : BaseEntity
     {    
         // Foreign Key properties
         public int ApartmentId { get; set; }
