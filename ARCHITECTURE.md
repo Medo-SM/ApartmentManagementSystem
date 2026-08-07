@@ -1,210 +1,257 @@
-# Apartment Management System - Architecture Specification
+# Apartment Management System - Architecture & DDD Specification
 
-This document defines the architectural guidelines and design principles for the **Apartment Management System**. The solution is built following **Clean Architecture (Onion Architecture)** principles adapted for modern **C# / .NET** applications.
+> **Version:** 1.0.0  
+> **Methodology:** Domain-Driven Design (DDD) & Clean Architecture (Onion Architecture)  
+> **Target Platform:** .NET 8.0 / .NET 9.0 LTS (WPF Desktop Application)  
+> **Persistence Engine:** Local Embedded SQLite / SQL Server Express (100% Offline)
 
 ---
 
-## Architectural Overview & Dependency Principles
+## 1. Architectural Overview & Dependency Principles
 
-The core rule of Clean Architecture in .NET is that **inner layers define domain rules and abstractions, while outer layers implement technical details**. Dependencies flow strictly inward.
+The solution follows **Clean Architecture (Onion Architecture)** principles adapted for Domain-Driven Design. Core business domain rules, aggregates, and entities reside at the center of the application, completely isolated from user interface frameworks, database ORMs, and external libraries.
+
+Dependencies flow **strictly inward**:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   Presentation Layer                    │
-│           (WPF / MAUI / WinForms / ASP.NET Core)        │
+│           (WPF Desktop / CommunityToolkit.Mvvm)         │
 └──────────────┬───────────────────────────┬──────────────┘
                │                           │
                ▼                           │
 ┌──────────────────────────────┐           │
 │    Infrastructure Layer      │           │
-│ (EF Core, Migrations, Serilog)│           │
+│ (EF Core, SQLite, Serilog)   │           │
 └──────────────┬───────────────┘           │
                │                           │
                ▼                           ▼
 ┌─────────────────────────────────────────────────────────┐
 │                    Application Layer                    │
-│         (Use Cases, DTOs, Service Interfaces)          │
-└──────────────────────────┬──────────────────────────────┘
-                           │
-                           ▼
+│   (Use Cases, Services, DTOs, Aggregate Repositories)  │
+└──────────────┬──────────────────────────────────────────┘
+               │
+               ▼
 ┌─────────────────────────────────────────────────────────┐
 │                      Domain Layer                       │
-│        (Entities, Enums, Value Objects, Exceptions)     │
+│  (Aggregates, Value Objects, Domain Events, Rules)      │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Dependency Rules:
-1. **Domain Layer**: Independent of all other layers and external libraries. Contains pure C# business entities and rules.
-2. **Application Layer**: Depends only on the **Domain** layer. Defines use cases, interfaces (`IRepository`, `IUnitOfWork`, `IDbContext`), DTOs, and validation logic.
-3. **Infrastructure Layer**: Depends on **Application** and **Domain**. Implements database persistence (EF Core / Dapper), file logging, and external service contracts.
-4. **Presentation Layer**: Depends on **Application** (and **Infrastructure** at the composition root for Dependency Injection setup). Responsible for UI rendering and user interactions.
+### Strict Layer Dependency Rules:
+1. **Domain Layer (`ApartmentManagementSystem.Domain`):** Pure C# business domain model. Zero dependencies on external NuGet packages, database frameworks, or UI controls.
+2. **Application Layer (`ApartmentManagementSystem.Application`):** Depends exclusively on the **Domain Layer**. Defines application use cases, aggregate repository interfaces, DTOs, domain event handlers, and `IUnitOfWork`.
+3. **Infrastructure Layer (`ApartmentManagementSystem.Infrastructure`):** Depends on **Application** and **Domain**. Implements database mapping using EF Core, repository implementations, password hashing, and local file logging (Serilog).
+4. **Presentation Layer (`ApartmentManagementSystem.Desktop`):** Depends on **Application** (and **Infrastructure** strictly at the Composition Root for Dependency Injection setup). Implements WPF Views and MVVM ViewModels.
 
 ---
 
-## .NET Solution & Project Structure
-
-The physical layout maps architectural boundaries directly to C# projects (`.csproj`) inside the Visual Studio Solution (`ApartmentManagmentSystem.sln`):
+## 2. Solution & Physical Directory Structure
 
 ```
 ApartmentManagmentSystem.sln
 ├── src/
 │   ├── Core/
-│   │   ├── ApartmentManagementSystem.Domain/             # Domain Project (.csproj)
-│   │   │   ├── Entities/                                 # Domain Model Entities
-│   │   │   │   ├── Apartment.cs
-│   │   │   │   ├── Tenant.cs
-│   │   │   │   ├── PaymentRecord.cs
-│   │   │   │   ├── Issue.cs
-│   │   │   │   ├── Parcel.cs
-│   │   │   │   ├── User.cs
-│   │   │   │   └── Role.cs
-│   │   │   ├── Enums/                                    # Domain Enums
-│   │   │   │   ├── OccupancyStatus.cs
-│   │   │   │   ├── PaymentStatus.cs
-│   │   │   │   └── IssueStatus.cs
-│   │   │   ├── Exceptions/                               # Core Domain Exceptions
-│   │   │   └── Common/                                   # Base Entity definitions
+│   │   ├── ApartmentManagementSystem.Domain/             # Domain Layer (.csproj)
+│   │   │   ├── Aggregates/                               # DDD Aggregates & Aggregate Roots
+│   │   │   │   ├── ApartmentAggregate/                   # Apartment.cs (Root), OccupancyStatus.cs
+│   │   │   │   ├── TenantAggregate/                      # Tenant.cs (Root)
+│   │   │   │   ├── PaymentAggregate/                     # PaymentRecord.cs (Root), PaymentStatus.cs
+│   │   │   │   ├── IssueAggregate/                       # Issue.cs (Root), IssueStatus.cs
+│   │   │   │   ├── ParcelAggregate/                      # Parcel.cs (Root), ParcelStatus.cs
+│   │   │   │   └── UserAggregate/                        # User.cs (Root), Role.cs
+│   │   │   ├── ValueObjects/                             # Immutable Value Objects
+│   │   │   │   ├── Money.cs                              # Rent/Payment amount encapsulation
+│   │   │   │   ├── RentalPeriod.cs                       # Month (1-12) & Year tuple
+│   │   │   │   ├── UnitNumber.cs                         # Apartment Unit identifier validation
+│   │   │   │   └── PhoneNumber.cs                        # Contact phone number validation
+│   │   │   ├── Events/                                   # Domain Events
+│   │   │   │   ├── TenantAssignedToApartmentEvent.cs
+│   │   │   │   ├── RentPaymentLoggedEvent.cs
+│   │   │   │   ├── IssueResolvedEvent.cs
+│   │   │   │   └── ParcelArrivedEvent.cs
+│   │   │   ├── Exceptions/                               # Core Domain Invariant Exceptions
+│   │   │   └── Common/                                   # AggregateRoot<TId>, Entity<TId>, ValueObject
 │   │   │
-│   │   └── ApartmentManagementSystem.Application/        # Application Project (.csproj)
-│   │       ├── Interfaces/                               # Abstractions & Contracts
+│   │   └── ApartmentManagementSystem.Application/        # Application Layer (.csproj)
+│   │       ├── Interfaces/                               # Service & Repository Abstractions
 │   │       │   ├── Persistence/                          # IApplicationDbContext, IUnitOfWork
-│   │       │   ├── Repositories/                         # IRepository<T>, ITenantRepository
+│   │       │   ├── Repositories/                         # Aggregate Repository Interfaces
 │   │       │   └── Services/                             # IPasswordHasher, ICurrentUserService
-│   │       ├── Services/                                 # Application Services (RentCalculator, etc.)
+│   │       ├── Services/                                 # Domain & Application Services
 │   │       ├── DTOs/                                     # Data Transfer Objects
-│   │       ├── Common/                                   # Result<T> pattern, Pagination
-│   │       └── DependencyInjection.cs                    # Service Registration Extensions
+│   │       ├── Common/                                   # Result<T> Pattern & Pagination
+│   │       └── DependencyInjection.cs                    # Application Service Registration
 │   │
 │   ├── Infrastructure/
-│   │   └── ApartmentManagementSystem.Infrastructure/     # Infrastructure Project (.csproj)
-│   │       ├── Persistence/
-│   │       │   ├── AppDbContext.cs                       # Entity Framework Core DbContext
-│   │       │   ├── Configurations/                       # Fluent API Entity Configurations
-│   │       │   ├── Repositories/                         # Concrete Repositories
-│   │       │   └── Migrations/                           # EF Core DB Migrations
+│   │   └── ApartmentManagementSystem.Infrastructure/     # Infrastructure Layer (.csproj)
+│   │       ├── Persistence/                              # EF Core AppDbContext & Configurations
+│   │       │   ├── Configurations/                       # Entity Configurations (Fluent API)
+│   │       │   ├── Repositories/                         # Concrete Repository Implementations
+│   │       │   └── Migrations/                           # EF Core Migrations
 │   │       ├── Security/                                 # Password Hashing Implementation
-│   │       ├── Logging/                                  # Serilog / File Logger configuration
-│   │       └── DependencyInjection.cs                    # Infrastructure Service Registration
+│   │       ├── Logging/                                  # Serilog File Logger Configuration
+│   │       └── DependencyInjection.cs                    # Infrastructure DI Extension Methods
 │   │
 │   └── Presentation/
-│       └── ApartmentManagementSystem.Desktop/           # Desktop / API Project (.csproj)
-│           ├── ViewModels/                               # MVVM ViewModels
-│           ├── Views/                                    # XAML Views & Controls
-│           ├── App.xaml / Program.cs                     # Application Bootstrapper & DI Host
+│       └── ApartmentManagementSystem.Desktop/           # Desktop Presentation Layer (.csproj)
+│           ├── ViewModels/                               # MVVM ViewModels (CommunityToolkit.Mvvm)
+│           ├── Views/                                    # XAML Views & Dialog Controls
+│           ├── App.xaml / Program.cs                     # Composition Root & DI Setup
 │           └── appsettings.json                          # Database Connection Strings & Settings
 │
 └── tests/
-    ├── ApartmentManagementSystem.Domain.UnitTests/       # Domain Logic Tests
-    ├── ApartmentManagementSystem.Application.UnitTests/  # Application Logic & Service Tests
-    └── ApartmentManagementSystem.Infrastructure.Tests/    # Repository & Database Integration Tests
+    ├── ApartmentManagementSystem.Domain.UnitTests/       # Domain Logic & Invariant Tests
+    ├── ApartmentManagementSystem.Application.UnitTests/  # Application Service & Use Case Tests
+    └── ApartmentManagementSystem.Infrastructure.Tests/   # EF Core Integration & Repository Tests
 ```
 
 ---
 
-## Detailed Layer Responsibilities
+## 3. Domain-Driven Design (DDD) Tactical Specifications
 
-### 1. Domain Layer (`Core/ApartmentManagementSystem.Domain`)
-- **Responsibility:** Represents business concepts, entities, rules, and logic.
-- **Key Constraints:** Pure C# code. **No NuGet dependencies on database providers or UI frameworks.**
-- **Key Components:**
-  - `BaseEntity`: Common properties like `Id`, `CreatedAt`, and `UpdatedAt`.
-  - `Entities`: Rich or data-backed entities (`Tenant`, `Apartment`, `PaymentRecord`, `Issue`, `Parcel`, `User`, `Role`).
-  - `Enums`: Typed states (e.g., `OccupancyStatus.Vacant`, `PaymentStatus.Paid`, `IssueStatus.Open`).
+### 3.1 Bounded Context Map
 
-### 2. Application Layer (`Core/ApartmentManagementSystem.Application`)
-- **Responsibility:** Orchestrates business operations and application use cases.
-- **Key Components:**
-  - `Interfaces`: Contracts for repositories (`IRepository<T>`), database context (`IApplicationDbContext`), and services (`IPasswordHasher`).
-  - `Services`: Business logic services (e.g., `RentCalculator`, `OccupancyManager`, `ParcelTracker`).
-  - `DTOs`: Data transfer structures used for input/output between UI and business layers.
-  - `Result<T>`: Uniform wrapper for operational success, warnings, or errors.
+```mermaid
+graph LR
+    subgraph Core Subdomains
+        AC[Occupancy & Unit Management Bounded Context]
+        RC[Rent & Financial Tracking Bounded Context]
+    end
+    subgraph Supporting Subdomains
+        MC[Maintenance Logging Bounded Context]
+        PC[Parcel Tracking Bounded Context]
+    end
+    subgraph Generic Subdomain
+        IC[Identity & Access Management Bounded Context]
+    end
 
-### 3. Infrastructure Layer (`Infrastructure/ApartmentManagementSystem.Infrastructure`)
-- **Responsibility:** Provides concrete implementations for data access, external systems, and persistence.
-- **Key Components:**
-  - `AppDbContext`: Entity Framework Core DbContext mapping domain entities to relational tables.
-  - `Configurations`: Entity mappings (`IEntityTypeConfiguration<T>`) defining keys, relationships, index constraints, and database column types.
-  - `Repositories`: Concrete data access implementations (e.g., `GenericRepository<T>`, `TenantRepository`).
-  - `Security`: Password hashing utilities (`PasswordHasher`) adhering to modern cryptographic standards.
-  - `Logging`: File loggers (e.g., Serilog) for offline/desktop application logging.
+    AC -->|Tenant ID & Unit ID| RC
+    AC -->|Unit ID & Tenant ID| MC
+    AC -->|Tenant ID| PC
+    IC -->|User & Role Credentials| AC
+```
 
-### 4. Presentation Layer (`Presentation/ApartmentManagementSystem.Desktop`)
-- **Responsibility:** Handles user input, state rendering, and application bootstrapping.
-- **Key Patterns & Components:**
-  - **MVVM Pattern**: ViewModels maintain UI state and execute commands; Views handle layout and bindings.
-  - **Composition Root**: `App.xaml.cs` or `Program.cs` builds the `IHost` and configures DI containers via `IServiceCollection`.
+### 3.2 Aggregates & Domain Invariants
 
----
-
-## Technical Recommendations & C# Best Practices
-
-| Concern | Recommended Technology / Library | Purpose |
+| Aggregate Root | Entities / Enums Included | Key Domain Invariants & Rules |
 | :--- | :--- | :--- |
-| **Framework** | .NET 8.0 / .NET 9.0 | Long-Term Support (LTS) C# runtime |
-| **ORM & Data Access** | Entity Framework Core (EF Core) | Relational database mapping & migrations |
-| **Database** | SQL Server / SQLite | Database storage engine |
-| **Dependency Injection** | `Microsoft.Extensions.DependencyInjection` | Built-in IoC container |
-| **UI Framework** | WPF (with `CommunityToolkit.Mvvm`) or MAUI | Desktop UI application development |
-| **Logging** | Serilog (`Serilog.Sinks.File`) | Structured logging to local file system |
-| **Validation** | FluentValidation | Clean decoupling of validation rules |
-| **Unit Testing** | xUnit, Moq, FluentAssertions | Automated unit testing framework |
+| **`Apartment`** | `OccupancyStatus` (`Vacant`, `Occupied`, `Maintenance`) | Rent cannot be negative. UnitNumber must be non-empty and unique. Cannot assign tenant if status is not `Vacant`. |
+| **`Tenant`** | Contact Info | FullName and PhoneNumber are mandatory. EmergencyContact is optional. |
+| **`PaymentRecord`**| `PaymentStatus` (`Paid`, `Partial`, `Pending`) | AmountPaid must be > 0. PaymentPeriodMonth must be between 1 and 12. Generates financial receipt. |
+| **`Issue`** | `IssueStatus` (`Open`, `In Progress`, `Resolved`) | Description cannot exceed 500 chars. Status transitions must follow sequence (`Open` ➔ `In Progress` ➔ `Resolved`). ResolvedDate set automatically on resolution. |
+| **`Parcel`** | `ParcelStatus` (`Pending Pickup`, `Picked Up`) | ArrivalTimestamp defaults to current time. Marking as `Picked Up` requires setting `PickupTimestamp`. |
+| **`User`** | `Role` (`Building Owner`, `Building Manager`, `Tenant`) | Username and Email must be unique. Password must be cryptographically hashed. `TenantID` mandatory only for Tenant role. |
 
 ---
 
-## C# Code Examples & Architectural Patterns
+## 4. Code Examples (DDD & Clean Architecture Implementation)
 
-### 1. Entity Definition (Domain Layer)
+### 4.1 Domain Layer: Aggregate Root Implementation
 
 ```csharp
-namespace ApartmentManagementSystem.Core.Domain.Entities;
+namespace ApartmentManagementSystem.Core.Domain.Aggregates.ApartmentAggregate;
 
-public class Tenant
+using ApartmentManagementSystem.Core.Domain.Common;
+using ApartmentManagementSystem.Core.Domain.Events;
+using ApartmentManagementSystem.Core.Domain.Exceptions;
+using ApartmentManagementSystem.Core.Domain.ValueObjects;
+
+public class Apartment : AggregateRoot<int>
 {
-    public int Id { get; set; }
-    public string FullName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string? EmergencyContact { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public UnitNumber UnitNumber { get; private set; } = null!;
+    public int FloorNumber { get; private set; }
+    public int NumberOfRooms { get; private set; }
+    public Money MonthlyRent { get; private set; } = null!;
+    public OccupancyStatus OccupancyStatus { get; private set; } = OccupancyStatus.Vacant;
+    public int? CurrentTenantId { get; private set; }
 
-    // Navigation Properties
-    public ICollection<Apartment> Apartments { get; set; } = new List<Apartment>();
-    public ICollection<PaymentRecord> PaymentRecords { get; set; } = new List<PaymentRecord>();
-    public ICollection<Issue> Issues { get; set; } = new List<Issue>();
-    public ICollection<Parcel> Parcels { get; set; } = new List<Parcel>();
-    public User? User { get; set; }
+    // EF Core Private Constructor
+    private Apartment() { }
+
+    public Apartment(UnitNumber unitNumber, int floorNumber, int numberOfRooms, Money monthlyRent)
+    {
+        if (floorNumber < 0)
+            throw new DomainRuleException("Floor number cannot be negative.");
+        if (numberOfRooms <= 0)
+            throw new DomainRuleException("Number of rooms must be greater than zero.");
+
+        UnitNumber = unitNumber ?? throw new ArgumentNullException(nameof(unitNumber));
+        FloorNumber = floorNumber;
+        NumberOfRooms = numberOfRooms;
+        MonthlyRent = monthlyRent ?? throw new ArgumentNullException(nameof(monthlyRent));
+        OccupancyStatus = OccupancyStatus.Vacant;
+    }
+
+    public void AssignTenant(int tenantId)
+    {
+        if (OccupancyStatus != OccupancyStatus.Vacant)
+            throw new DomainRuleException($"Cannot assign tenant. Apartment is currently {OccupancyStatus}.");
+
+        CurrentTenantId = tenantId;
+        OccupancyStatus = OccupancyStatus.Occupied;
+
+        AddDomainEvent(new TenantAssignedToApartmentEvent(Id, tenantId, DateTime.UtcNow));
+    }
+
+    public void VacateUnit()
+    {
+        CurrentTenantId = null;
+        OccupancyStatus = OccupancyStatus.Vacant;
+    }
+
+    public void SetMaintenanceStatus()
+    {
+        if (OccupancyStatus == OccupancyStatus.Occupied)
+            throw new DomainRuleException("Cannot set occupied unit to maintenance.");
+
+        OccupancyStatus = OccupancyStatus.Maintenance;
+    }
 }
 ```
 
-### 2. Generic Repository Interface (Application Layer)
+### 4.2 Application Layer: Repository Contracts & Unit of Work
 
 ```csharp
 namespace ApartmentManagementSystem.Core.Application.Interfaces.Repositories;
 
-public interface IRepository<T> where T : class
+using ApartmentManagementSystem.Core.Domain.Aggregates.ApartmentAggregate;
+
+public interface IApartmentRepository
 {
-    Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<T>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<T> AddAsync(T entity, CancellationToken cancellationToken = default);
-    void Update(T entity);
-    void Delete(T entity);
+    Task<Apartment?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Apartment?> GetByUnitNumberAsync(string unitNumber, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Apartment>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task AddAsync(Apartment apartment, CancellationToken cancellationToken = default);
+    void Update(Apartment apartment);
+    void Delete(Apartment apartment);
+}
+
+public interface IUnitOfWork
+{
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 ```
 
-### 3. DbContext Configuration (Infrastructure Layer)
+### 4.3 Infrastructure Layer: EF Core DbContext & Configurations
 
 ```csharp
 namespace ApartmentManagementSystem.Infrastructure.Persistence;
 
 using Microsoft.EntityFrameworkCore;
-using ApartmentManagementSystem.Core.Domain.Entities;
+using ApartmentManagementSystem.Core.Domain.Aggregates.ApartmentAggregate;
+using ApartmentManagementSystem.Core.Domain.Aggregates.TenantAggregate;
+using ApartmentManagementSystem.Core.Domain.Aggregates.PaymentAggregate;
+using ApartmentManagementSystem.Core.Domain.Aggregates.IssueAggregate;
+using ApartmentManagementSystem.Core.Domain.Aggregates.ParcelAggregate;
+using ApartmentManagementSystem.Core.Domain.Aggregates.UserAggregate;
 
 public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Apartment> Apartments => Set<Apartment>();
+    public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<PaymentRecord> PaymentRecords => Set<PaymentRecord>();
     public DbSet<Issue> Issues => Set<Issue>();
     public DbSet<Parcel> Parcels => Set<Parcel>();
@@ -219,10 +266,59 @@ public class AppDbContext : DbContext
 }
 ```
 
-### 4. Dependency Injection Registration Root
+### 4.4 Infrastructure Entity Configuration (Fluent API)
 
 ```csharp
-namespace ApartmentManagementSystem.Infrastructure;
+namespace ApartmentManagementSystem.Infrastructure.Persistence.Configurations;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using ApartmentManagementSystem.Core.Domain.Aggregates.ApartmentAggregate;
+using ApartmentManagementSystem.Core.Domain.ValueObjects;
+
+public class ApartmentConfiguration : IEntityTypeConfiguration<Apartment>
+{
+    public void Configure(EntityTypeBuilder<Apartment> builder)
+    {
+        builder.ToTable("Apartments");
+        builder.HasKey(a => a.Id);
+        builder.Property(a => a.Id).HasColumnName("ApartmentID");
+
+        builder.Property(a => a.UnitNumber)
+            .HasConversion(u => u.Value, v => new UnitNumber(v))
+            .HasColumnName("UnitNumber")
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.HasIndex(a => a.UnitNumber).IsUnique();
+
+        builder.Property(a => a.MonthlyRent)
+            .HasConversion(m => m.Amount, a => new Money(a))
+            .HasColumnName("MonthlyRent")
+            .HasPrecision(10, 2)
+            .IsRequired();
+
+        builder.Property(a => a.OccupancyStatus)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(OccupancyStatus.Vacant);
+
+        builder.HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(a => a.CurrentTenantId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
+}
+```
+
+---
+
+## 5. Composition Root & Dependency Injection Setup
+
+Presentation layer bootstrapping in `App.xaml.cs` or `Program.cs` wires up IoC containers:
+
+```csharp
+namespace ApartmentManagementSystem.Desktop;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -230,14 +326,27 @@ using ApartmentManagementSystem.Infrastructure.Persistence;
 using ApartmentManagementSystem.Core.Application.Interfaces.Repositories;
 using ApartmentManagementSystem.Infrastructure.Persistence.Repositories;
 
-public static class DependencyInjection
+public static class ServiceConfigurator
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string connectionString)
+    public static IServiceCollection ConfigureServices(IServiceCollection services, string connectionString)
     {
+        // 1. DbContext Registration
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlite(connectionString));
 
-        services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
+        // 2. Unit of Work & Repositories
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IApartmentRepository, ApartmentRepository>();
+        services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<IPaymentRecordRepository, PaymentRecordRepository>();
+
+        // 3. Application Services
+        services.AddScoped<RentCalculatorDomainService>();
+
+        // 4. ViewModels
+        services.AddTransient<MainViewModel>();
+        services.AddTransient<ApartmentsViewModel>();
+        services.AddTransient<PaymentsViewModel>();
 
         return services;
     }
@@ -246,42 +355,13 @@ public static class DependencyInjection
 
 ---
 
-## Data Integrity & Transaction Handling
+## 6. Cross-Cutting Concerns
 
-Operations modifying multiple aggregate roots (such as assigning a tenant to an apartment while logging an initial deposit or payment) must be wrapped in transactional boundaries:
-
-```csharp
-public async Task<bool> AssignTenantToApartmentAsync(int apartmentId, int tenantId, decimal depositAmount)
-{
-    using var transaction = await _dbContext.Database.BeginTransactionAsync();
-    try
-    {
-        var apartment = await _dbContext.Apartments.FindAsync(apartmentId);
-        if (apartment == null) return false;
-
-        apartment.CurrentTenantId = tenantId;
-        apartment.OccupancyStatus = "Occupied";
-
-        var payment = new PaymentRecord
-        {
-            TenantId = tenantId,
-            ApartmentId = apartmentId,
-            AmountPaid = depositAmount,
-            PaymentPeriodMonth = DateTime.UtcNow.Month,
-            PaymentPeriodYear = DateTime.UtcNow.Year,
-            Status = "Paid"
-        };
-
-        _dbContext.PaymentRecords.Add(payment);
-
-        await _dbContext.SaveChangesAsync();
-        await transaction.CommitAsync();
-        return true;
-    }
-    catch
-    {
-        await transaction.RollbackAsync();
-        throw;
-    }
-}
-```
+| Concern | Technology / Pattern | Purpose |
+| :--- | :--- | :--- |
+| **Data Access & ORM** | Entity Framework Core (EF Core) | Encapsulates SQL database access and migrations. |
+| **Local Database Engine** | SQLite (Embedded) / SQL Server Express | 100% offline database operational continuity. |
+| **Password Security** | PBKDF2 with Salt / BCrypt | Hashing credentials prior to database persistence. |
+| **Local Logging** | Serilog (`Serilog.Sinks.File`) | Structured error and audit logging to local disk. |
+| **Validation** | FluentValidation | Clean separation of UI/DTO validation rules. |
+| **UI Data Binding** | `CommunityToolkit.Mvvm` | Reactive MVVM ViewModels for WPF Desktop controls. |
