@@ -2,9 +2,9 @@ using ApartmentManagmentSystem.Core.Domain.Entities;
 using System;
 namespace ApartmentManagmentSystem.Core.Domain.Entities
 {
-public class Apartment
+public class Apartment : BaseEntity
 {
-    public int Id { get; set; }
+
     public string UnitNumber { get; set; } = string.Empty;
     public int FloorNumber { get; set; }
     public int NumberOfRooms { get; set; }
