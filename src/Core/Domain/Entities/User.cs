@@ -1,7 +1,9 @@
-using System;
-using ApartmentManagementSystem.Core.Domain.Entities;
 namespace ApartmentManagementSystem.Core.Domain.Entities
 {
+using System;
+using ApartmentManagementSystem.Core.Domain.Entities;
+using ApartmentManagementSystem.Core.Domain.Entities.Base;
+
 public class User : BaseEntity
     {
 

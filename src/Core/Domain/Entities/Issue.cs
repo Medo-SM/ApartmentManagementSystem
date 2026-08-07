@@ -1,8 +1,8 @@
-using System;
-using ApartmentManagementSystem.Core.Domain.Entities;
 namespace ApartmentManagementSystem.Core.Domain.Entities
 {
-
+using ApartmentManagmentSystem.Core.Domain.Entities;
+using System;
+using ApartmentManagementSystem.Core.Domain.Entities.Base;
 public class Issue : BaseEntity
     {    
         // Foreign Key properties

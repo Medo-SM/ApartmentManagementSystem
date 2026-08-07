@@ -1,7 +1,11 @@
-namespace ApartmentManagement.Core.Domain.Entities;
-
+namespace ApartmentManagement.Core.Domain.Entities
+{
+using ApartmentManagmentSystem.Core.Domain.Entities;
+using System;
+using ApartmentManagementSystem.Core.Domain.Entities.Base;
 public class PaymentRecord : BaseEntity
 {
+
     // Foreign Key properties
     public int TenantId { get; set; }
     public int ApartmentId { get; set; }
@@ -14,4 +18,5 @@ public class PaymentRecord : BaseEntity
     // Navigation properties
     public Tenant Tenant { get; set; } = null!;
     public Apartment Apartment { get; set; } = null!;
+}
 }
