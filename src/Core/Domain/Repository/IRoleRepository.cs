@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Repository
 {
-    interface IRoleRepository
+    public interface IRoleRepository
     {
         void Add(Role role);
         void Update(Role role);

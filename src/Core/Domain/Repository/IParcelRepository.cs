@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Repository
 {
-    interface IParcelRepository
+    public interface IParcelRepository
     {
         void Add(Parcel parcel);
         void Update(Parcel parcel);

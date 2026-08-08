@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Repository
 {
-    interface IIssueRepository
+    public interface IIssueRepository
     {
         void Add(Issue issue);
         void Update(Issue issue);

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Repository
 {
-    interface IPaymentRecordRepository
+    public interface IPaymentRecordRepository
     {
         void Add(PaymentRecord paymentRecord);
         void Update(PaymentRecord payment);

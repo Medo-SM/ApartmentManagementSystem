@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Repository
 {
-    interface IApartmentRepository
+    public interface IApartmentRepository
     {
         void Add(Apartment apartment);
         void Update(Apartment apartment);

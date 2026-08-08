@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Repository
 {
-    interface IUserRepository
+    public interface IUserRepository
     {
         void Add(User user);
         void Update(User user);
