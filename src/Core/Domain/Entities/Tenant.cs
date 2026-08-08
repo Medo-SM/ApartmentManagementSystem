@@ -1,6 +1,5 @@
 using ApartmentManagement.Core.Domain.Entities;
 using ApartmentManagementSystem.Core.Domain.Entites.Base;
-using ApartmentManagmentSystem.Core.Domain.Entities;
 using System.Collections.Generic;
 
 namespace ApartmentManagementSystem.Core.Domain.Entities

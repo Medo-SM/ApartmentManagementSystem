@@ -4,7 +4,7 @@ namespace ApartmentManagementSystem.Core.Domain.Entities
     using System;
 
 
-public class User : BaseEntity
+    public class User : BaseEntity
     {
 
         public string Username { get; set; } = string.Empty;

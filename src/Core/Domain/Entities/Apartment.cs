@@ -1,4 +1,4 @@
-namespace ApartmentManagmentSystem.Core.Domain.Entities
+namespace ApartmentManagementSystem.Core.Domain.Entities
 {
     using ApartmentManagement.Core.Domain.Entities;
     using ApartmentManagementSystem.Core.Domain.Entites.Base;
