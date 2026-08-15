@@ -1,3 +1,12 @@
+## [0.2.1](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.2.0...v0.2.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* resolve broken project references for infrastructure ([6b32c67](https://github.com/Medo-SM/ApartmentManagementSystem/commit/6b32c67951add63dc2288122870a5992f4b328b2))
+
+
+
 # [0.2.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.1.1...v0.2.0) (2026-08-08)
 
 
