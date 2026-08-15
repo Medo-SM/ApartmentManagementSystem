@@ -1,19 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 
 namespace Application.DTOs
 {
-    class ApartmentDto
+    public class ApartmentDto
     {
-        int Id { get; set; }
-        string UnitNumber { get; set; }
-        int FloorNumber{ get; set; }
-        int NumberOfRooms { get; set; }
-        decimal MonthlyRent { get; set; }
-        string OccupancyStatus { get; set; } = "Vacant";
-        int? CurrentTenantId{ get; set; }
+        public int Id { get; set; }
+        public string UnitNumber { get; set; } = string.Empty;
+        public int FloorNumber { get; set; }
+        public int NumberOfRooms { get; set; }
+        public decimal MonthlyRent { get; set; }
+        public string OccupancyStatus { get; set; } = "Vacant";
+        public int? CurrentTenantId { get; set; }
     }
 }
