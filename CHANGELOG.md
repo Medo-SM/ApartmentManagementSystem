@@ -1,3 +1,12 @@
+# [0.3.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.2.1...v0.3.0) (2026-08-22)
+
+
+### Features
+
+* **application:** implement service layer with ([1fddcd0](https://github.com/Medo-SM/ApartmentManagementSystem/commit/1fddcd057ee75ab77c49eeca689c5ffac51577b9))
+
+
+
 ## [0.2.1](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.2.0...v0.2.1) (2026-08-15)
 
 
