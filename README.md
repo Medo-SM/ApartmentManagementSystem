@@ -34,6 +34,8 @@ ApartmentManagementSystem/
 └── ApartmentManagmentSchema.sql # Database schema & seed scripts
 ```
 
+> 📖 **New to Clean Architecture?** Check out our beginner-friendly guide: [**BACKEND_ARCHITECTURE.md**](BACKEND_ARCHITECTURE.md) for a step-by-step explanation and code walkthrough.
+
 ---
 
 ## 🛠️ Tech Stack
