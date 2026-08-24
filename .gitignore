@@ -1,46 +1,76 @@
-## Build and output directories
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
-build/
-dist/
 
-## Visual Studio & IDEs
-.vscode/
+## Visual Studio
 .vs/
-*.user
-*.userosscache
-*.sln.docstates
 *.suo
+*.user
 *.userprefs
+*.usertasks
+*.sln.docstates
+*.VisualState.xml
+*.DotSettings.user
 *.pidb
 *.booproj
 *.svclog
-*.pfx
-*.publishsettings
+*.vshost.*
+
+## Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## JetBrains Rider / Resharper
 .idea/
-*.sln.iml
+_ReSharper*/
+*.ReSharper
+*.DotSettings.user
 
-## User-specific & Environment files
-appsettings*.Development.json
-appsettings*.Local.json
-*.env
-*.env.local
-*.env.*.local
+## NuGet Packages
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
 
-## Node.js & Package Managers
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+## Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
 
-## Operating System files
+## Operating System Files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*.tmp
+*~
+
+## Database / Local data
+*.mdf
+*.ldf
+*.ndf
+*.db-shm
+*.db-wal
+
+## Environment & Secrets
+.env
+.env.local
+*.local.json
