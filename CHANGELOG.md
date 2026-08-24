@@ -1,3 +1,12 @@
+# [0.4.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.3.0...v0.4.0) (2026-08-24)
+
+
+### Features
+
+* **presentation:** add the full presentation layer upto the db migration ([039fd73](https://github.com/Medo-SM/ApartmentManagementSystem/commit/039fd739f78fd83ec2ee471b42b3bf1d25742bed))
+
+
+
 # [0.3.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.2.1...v0.3.0) (2026-08-22)
 
 
@@ -32,16 +41,6 @@
 ### Bug Fixes
 
 * correct typo in packages import name ([3bf9f4f](https://github.com/Medo-SM/ApartmentManagementSystem/commit/3bf9f4fc3ac232deb11d39ec294f15c793447f0b))
-
-
-
-# [0.1.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/ded46791c9bd5d514546215ed8510b6195bfdcd9...v0.1.0) (2026-07-21)
-
-
-### Features
-
-* Added a workflow to automate changelog ([6e3b8b7](https://github.com/Medo-SM/ApartmentManagementSystem/commit/6e3b8b7e3c3d09265bc7fa3546685be580ccdcea))
-* Added a workflow to automate changelog ([ded4679](https://github.com/Medo-SM/ApartmentManagementSystem/commit/ded46791c9bd5d514546215ed8510b6195bfdcd9))
 
 
 
