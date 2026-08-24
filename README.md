@@ -65,19 +65,43 @@ cd ApartmentManagementSystem
 ```
 
 ### 2. Set Up the Database
-1. Open SQL Server Management Studio (SSMS) or your preferred SQL editor.
-2. Open and run the [`ApartmentManagmentSchema.sql`](ApartmentManagmentSchema.sql) script in the project root.
-3. This creates the `ApartmentManagementDB` database, all necessary tables, constraints, foreign keys, and seeds default roles (`Building Owner`, `Building Manager`, `Tenant`).
 
-### 3. Configure Connection String
-Update the connection string in `ApartmentManagement.API/appsettings.json` (or your local configuration) to match your local SQL Server instance:
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=ApartmentManagementDB;Trusted_Connection=True;"
+You can set up the database using either **EF Core Migrations** or the provided **SQL Script**:
+
+- **Option A (EF Core Migrations - Recommended):**
+  Using Visual Studio Package Manager Console (PMC):
+  ```powershell
+  # Set Default project to Infrastructure
+  Add-Migration InitialCreate -StartupProject ApartmentManagement.API
+  Update-Database -StartupProject ApartmentManagement.API
+  ```
+  Or via .NET CLI:
+  ```bash
+  dotnet ef database update --project src/Core/Infrastructure --startup-project ApartmentManagement.API
+  ```
+
+- **Option B (Direct SQL Script):**
+  Open and execute [`ApartmentManagmentSchema.sql`](ApartmentManagmentSchema.sql) in SQL Server Management Studio (SSMS) or Azure Data Studio to create `ApartmentManagementDB` and seed default roles.
+
+### 3. Configure Database Connection & Secrets
+
+To follow security best practices and prevent credentials from being committed to source control:
+
+- **Option A: Secure Local Secrets (Recommended for SQL Auth with Password):**
+  ```bash
+  cd ApartmentManagement.API
+  dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=ApartmentManagementDB;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True;"
+  ```
+
+- **Option B: Windows Authentication / Integrated Security:**
+  Update `ApartmentManagement.API/appsettings.json`:
+  ```json
+  {
+    "ConnectionStrings": {
+      "DefaultConnection": "Server=localhost;Database=ApartmentManagementDB;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;"
+    }
   }
-}
-```
+  ```
 
 ### 4. Build and Run
 Using the .NET CLI:
@@ -89,7 +113,7 @@ dotnet build
 dotnet run --project ApartmentManagement.API
 ```
 
-Once running, open your browser and navigate to `https://localhost:5001/swagger` (or the port displayed in your terminal) to explore and test the endpoints via Swagger UI.
+Once running, navigate to `https://localhost:5001/swagger` (or `http://localhost:5000/swagger`) to explore and test all RESTful endpoints (`/api/User`, `/api/Apartment`, `/api/Tenant`, `/api/Issue`, `/api/Parcel`, `/api/PaymentRecord`, `/api/Role`) via Swagger UI.
 
 ---
 
