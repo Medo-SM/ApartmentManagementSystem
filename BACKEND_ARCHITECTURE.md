@@ -11,13 +11,18 @@
    - [Layer 2: Application (The Brain & Business Workflows)](#layer-2-application-the-brain--business-workflows)
    - [Layer 3: Infrastructure (The Database Heavy-Lifter)](#layer-3-infrastructure-the-database-heavy-lifter)
    - [Layer 4: Presentation / API (The Front Desk)](#layer-4-presentation--api-the-front-desk)
-3. [Core Concepts Explained in Plain English](#3-core-concepts-explained-in-plain-english)
+3. [Deep Dive: How the Layers Interact With Each Other](#3-deep-dive-how-the-layers-interact-with-each-other)
+   - [Interaction Map & Object Flow](#interaction-map--object-flow)
+   - [Why Layer 2 Does Not Depend on Layer 3 (Dependency Inversion)](#why-layer-2-does-not-depend-on-layer-3-dependency-inversion)
+   - [Why Layer 4 Does Not Talk to the Database](#why-layer-4-does-not-talk-to-the-database)
+4. [Core Concepts Explained in Plain English](#4-core-concepts-explained-in-plain-english)
    - [Why do we use Interfaces? (The Wall Socket Analogy)](#why-do-we-use-interfaces-the-wall-socket-analogy)
    - [What is a DTO and why do we use AutoMapper?](#what-is-a-dto-and-why-do-we-use-automapper)
    - [What is Dependency Injection (DI)?](#what-is-dependency-injection-di)
-4. [Step-by-Step Walkthrough: Registering a New Tenant](#4-step-by-step-walkthrough-registering-a-new-tenant)
-5. [Codebase Map (Where to Find What)](#5-codebase-map-where-to-find-what)
-6. [Beginner Cheat Sheet & Glossary](#6-beginner-cheat-sheet--glossary)
+   - [How BaseController Standardizes API Responses](#how-basecontroller-standardizes-api-responses)
+5. [Step-by-Step Walkthrough: Registering a New Tenant](#5-step-by-step-walkthrough-registering-a-new-tenant)
+6. [Codebase Map (Where to Find What)](#6-codebase-map-where-to-find-what)
+7. [Beginner Cheat Sheet & Glossary](#7-beginner-cheat-sheet--glossary)
 
 ---
 
@@ -56,22 +61,36 @@ In a well-run restaurant, duties are strictly separated into **specialized roles
 
 Here is how our solution ([`ApartmentManagementSystem.sln`](ApartmentManagementSystem.sln)) is structured:
 
-```
-┌────────────────────────────────────────────────────────┐
-│ 1. Presentation Layer (ApartmentManagement.API)        │  <-- Receives HTTP requests (Swagger / Web API)
-└──────────────────────────┬─────────────────────────────┘
-                           │ Calls
-┌──────────────────────────▼─────────────────────────────┐
-│ 2. Application Layer (src/Core/Application)            │  <-- Business logic, Services, DTOs, AutoMapper
-└──────────────────────────┬─────────────────────────────┘
-                           │ Calls
-┌──────────────────────────▼─────────────────────────────┐
-│ 3. Infrastructure Layer (src/Core/Infrastructure)      │  <-- EF Core, AppDbContext, SQL Database queries
-└──────────────────────────┬─────────────────────────────┘
-                           │ Implements & references
-┌──────────────────────────▼─────────────────────────────┐
-│ 4. Domain Layer (src/Core/Domain)                      │  <-- Entities (Tenant, Apartment) & Interfaces
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Presentation["1. Presentation Layer (ApartmentManagement.API)"]
+        Swagger["Swagger UI / HTTP Clients"]
+        Controllers["Controllers (TenantController.cs)"]
+        BaseController["BaseController.cs (Error & Response Standardizer)"]
+        Program["Program.cs (Dependency Injection Setup)"]
+    end
+
+    subgraph Application["2. Application Layer (src/Core/Application)"]
+        Services["Services (TenantServiceImpl.cs - Business Logic)"]
+        DTOs["DTOs (TenantDto.cs - Safe Network Models)"]
+        AutoMapper["AutoMapper (MappingConfig.cs - Object Converter)"]
+    end
+
+    subgraph Domain["3. Domain Layer (src/Core/Domain) - The Center"]
+        Entities["Entities (Tenant.cs, Apartment.cs)"]
+        BaseEntity["BaseEntity.cs (Id, CreatedAt, UpdatedAt)"]
+        RepoContracts["Repository Interfaces (ITenantRepository.cs)"]
+    end
+
+    subgraph Infrastructure["4. Infrastructure Layer (src/Core/Infrastructure)"]
+        EFCore["EF Core AppDbContext.cs (SQL Server Mappings)"]
+        Repositories["Repositories (TenantRepository.cs - Real SQL Queries)"]
+    end
+
+    Presentation --> Application
+    Presentation --> Infrastructure
+    Application --> Domain
+    Infrastructure --> Domain
 ```
 
 ---
@@ -118,16 +137,20 @@ An interface does **not** contain code. It is simply a list of required operatio
 ---
 
 ### Layer 2: Application (`src/Core/Application`)
-> **Summary:** The Brain. It handles business logic, converts data, and organizes operations.
+> **Summary:** The Brain. It handles business logic, converts data, coordinates workflows, and organizes operations.
 
-Application connects the outside world (API) with the inner domain.
+The Application layer connects the outside world (API) with the inner domain. It knows **what business rules must happen** when an action is triggered.
 
-#### 1. DTOs (Data Transfer Objects)
-Why don't we send raw database entities directly to the API?
-- Entities contain private database links (`List<PaymentRecord>`, password hashes, internal IDs).
-- Sending an entire entity can cause circular reference crashes and security leaks.
+#### 1. Why Did We Write This Layer?
+Without this layer, your API Controllers would have to do everything: talk to SQL, check business rules, catch database errors, and map fields. 
 
-Instead, we use a lightweight **DTO** ([`src/Core/Application/DTOs/TenantDto.cs`](src/Core/Application/DTOs/TenantDto.cs)):
+By having the Application layer:
+* **Business rules are centralized:** E.g., checking if an apartment is vacant before assigning a tenant, validating payment amounts, or auto-setting pickup timestamps.
+* **Reusable across different UIs:** If tomorrow you build a Windows Desktop GUI (WPF), a Web app (React/Blazor), or a mobile app, **the entire Application layer is 100% reused without changing a single line of code**.
+
+#### 2. Anatomy of the Application Layer Code
+
+##### A. DTOs (Data Transfer Objects) — e.g. [`TenantDto.cs`](src/Core/Application/DTOs/TenantDto.cs)
 ```csharp
 public class TenantDto
 {
@@ -137,29 +160,34 @@ public class TenantDto
     public string? EmergencyContact { get; set; }
 }
 ```
-It carries **only** the data needed by the user.
 
-#### 2. AutoMapper (`MappingConfig.cs`)
-Instead of manually typing:
-```csharp
-var tenant = new Tenant();
-tenant.FullName = tenantDto.FullName;
-tenant.PhoneNumber = tenantDto.PhoneNumber;
-```
-We use **AutoMapper** ([`src/Core/Application/Mappings/MappingConfig.cs`](src/Core/Application/Mappings/MappingConfig.cs)) to copy all matching fields in one line:
-```csharp
-CreateMap<Tenant, TenantDto>().ReverseMap();
-```
+* **Why not send the raw `Tenant.cs` entity to Swagger/API?**
+  1. **Circular Reference Prevention:** `Tenant` has a `List<PaymentRecord>`, and each `PaymentRecord` has a `Tenant`. Sending raw entities makes the JSON serializer loop forever and crash the server.
+  2. **Security & Privacy:** If an entity has private data (like `PasswordHash` in `User`), the DTO omits it so it is never exposed over the network.
+  3. **Stability:** If you add an internal column to the SQL database table, the external API format remains untouched.
 
-#### 3. Services (`TenantServiceImpl.cs`)
-The **Service** executes the actual workflow ([`src/Core/Application/ServiceImpl/TenantServiceImpl.cs`](src/Core/Application/ServiceImpl/TenantServiceImpl.cs)):
+##### B. Service Interfaces — e.g. [`ITenantService.cs`](src/Core/Application/Interfaces/ITenantService.cs)
+```csharp
+public interface ITenantService
+{
+    void CreateTenant(TenantDto tenantDto);
+    TenantDto? GetTenantById(int id);
+    IEnumerable<TenantDto> GetAllTenants();
+    void UpdateTenant(TenantDto tenantDto);
+    void DeleteTenant(int id);
+}
+```
+* **Why write an interface for services?**
+  It defines the contract of what the application can do. The API controllers only reference `ITenantService`, which makes testing easy and prevents the API from knowing how the service is coded inside.
+
+##### C. Service Implementations — e.g. [`TenantServiceImpl.cs`](src/Core/Application/ServiceImpl/TenantServiceImpl.cs)
 ```csharp
 public class TenantServiceImpl : ITenantService
 {
     private readonly ITenantRepository _tenantRepository;
     private readonly IMapper _mapper;
 
-    // We ask for our helpers via Constructor Injection
+    // 1. Ask for dependencies via Constructor Injection
     public TenantServiceImpl(ITenantRepository tenantRepository, IMapper mapper)
     {
         _tenantRepository = tenantRepository;
@@ -168,27 +196,47 @@ public class TenantServiceImpl : ITenantService
 
     public void CreateTenant(TenantDto tenantDto)
     {
-        // 1. Guard check
+        // 2. Validate input
         if (tenantDto == null) throw new ArgumentNullException(nameof(tenantDto));
 
-        // 2. Convert DTO -> Database Entity
+        // 3. Convert DTO -> Database Entity
         var tenantEntity = _mapper.Map<Tenant>(tenantDto);
 
-        // 3. Ask Repository to save to database
+        // 4. Save to database via repository
         _tenantRepository.Add(tenantEntity);
     }
 }
 ```
+
+##### D. AutoMapper Profile — [`MappingConfig.cs`](src/Core/Application/Mappings/MappingConfig.cs)
+```csharp
+public class MappingProfile : Profile
+{
+    public MappingProfile()
+    {
+        CreateMap<Tenant, TenantDto>().ReverseMap();
+        CreateMap<Apartment, ApartmentDto>().ReverseMap();
+        // ...
+    }
+}
+```
+* **Why use AutoMapper?**
+  It saves you from writing manual mapping code (`entity.FullName = dto.FullName; entity.PhoneNumber = dto.PhoneNumber; ...`) on every single method. AutoMapper copies all matching properties automatically in one line: `_mapper.Map<Tenant>(dto)`.
 
 ---
 
 ### Layer 3: Infrastructure (`src/Core/Infrastructure`)
 > **Summary:** The Database Worker. It writes and reads real records in SQL Server using **Entity Framework Core (EF Core)**.
 
-Infrastructure implements the interfaces defined in Domain.
+Infrastructure implements the repository interfaces defined in the Domain layer.
 
-#### 1. `AppDbContext.cs` (The Database Session)
-In [`src/Core/Infrastructure/Data/AppDbContext.cs`](src/Core/Infrastructure/Data/AppDbContext.cs), EF Core links C# classes to SQL tables:
+#### 1. Why Did We Write This Layer?
+We want our business logic (Application layer) to be completely independent from database technologies.
+* If you decide to switch from **Microsoft SQL Server** to **SQLite** (for a 100% offline portable desktop app) or **PostgreSQL**, **you only touch the Infrastructure layer**. Domain, Application, and Controllers do not change at all.
+
+#### 2. Anatomy of the Infrastructure Layer Code
+
+##### A. `AppDbContext.cs` (The Database Session) — [`AppDbContext.cs`](src/Core/Infrastructure/Data/AppDbContext.cs)
 ```csharp
 public class AppDbContext : DbContext
 {
@@ -201,12 +249,32 @@ public class AppDbContext : DbContext
     public DbSet<Parcel> Parcels { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Configure Apartment table rules
+        modelBuilder.Entity<Apartment>(entity =>
+        {
+            entity.HasIndex(e => e.UnitNumber).IsUnique();
+            entity.Property(e => e.MonthlyRent).HasColumnType("decimal(10,2)");
+            entity.HasOne(e => e.CurrentTenant)
+                  .WithMany(t => t.Apartments)
+                  .HasForeignKey(e => e.CurrentTenantId)
+                  .OnDelete(DeleteBehavior.SetNull); // When tenant moves out, unit becomes Vacant (NULL)
+        });
+    }
 }
 ```
-Each `DbSet<T>` corresponds to a table in [`ApartmentManagmentSchema.sql`](ApartmentManagmentSchema.sql).
+* **What `AppDbContext` does:**
+  * `DbSet<Tenant> Tenants`: Represents the `Tenants` table in SQL Server.
+  * `OnModelCreating`: Configures database rules using EF Core Fluent API:
+    * `IsUnique()`: Enforces unique unit numbers and email addresses.
+    * `HasColumnType("decimal(10,2)")`: Ensures zero floating-point rounding errors on rent and payments.
+    * `OnDelete(DeleteBehavior.SetNull)`: Protects data relationships.
 
-#### 2. Repository Implementations (`TenantRepository.cs`)
-This class writes the actual EF Core code to talk to SQL ([`src/Core/Infrastructure/Repositories/TenantRepository.cs`](src/Core/Infrastructure/Repositories/TenantRepository.cs)):
+##### B. Repository Implementation — e.g. [`TenantRepository.cs`](src/Core/Infrastructure/Repositories/TenantRepository.cs)
 ```csharp
 public class TenantRepository : ITenantRepository
 {
@@ -219,38 +287,218 @@ public class TenantRepository : ITenantRepository
 
     public void Add(Tenant tenant)
     {
-        _context.Tenants.Add(tenant); // Prepares the INSERT command
-        _context.SaveChanges();      // Executes SQL in the database
+        _context.Tenants.Add(tenant); // Marks entity as "Added" in memory
+        _context.SaveChanges();      // Generates and executes: INSERT INTO Tenants (...) VALUES (...)
     }
 
     public Tenant? GetById(int id)
     {
-        return _context.Tenants.Find(id); // Runs SELECT WHERE Id = id
+        return _context.Tenants.Find(id); // Generates: SELECT TOP(1) * FROM Tenants WHERE Id = @id
+    }
+
+    public List<Tenant> GetAll()
+    {
+        return _context.Tenants.ToList(); // Generates: SELECT * FROM Tenants
+    }
+
+    public void Update(Tenant tenant)
+    {
+        _context.Tenants.Update(tenant);
+        _context.SaveChanges(); // Generates: UPDATE Tenants SET ... WHERE Id = @id
+    }
+
+    public void Delete(int id)
+    {
+        var tenant = _context.Tenants.Find(id);
+        if (tenant != null)
+        {
+            _context.Tenants.Remove(tenant);
+            _context.SaveChanges(); // Generates: DELETE FROM Tenants WHERE Id = @id
+        }
     }
 }
 ```
+* **Why use the Repository Pattern when EF Core is already an ORM?**
+  1. **Encapsulates Database Code:** If you need to change how data is queried (e.g. adding caching, soft-deletes, or stored procedures), you do it in one place.
+  2. **Testability:** During testing, you can substitute a fake in-memory repository without spinning up a real SQL Server database.
 
 ---
 
 ### Layer 4: Presentation / API (`ApartmentManagement.API`)
-> **Summary:** The Receptionist. It exposes HTTP REST endpoints that outside clients (web pages, mobile apps, desktop UIs, Swagger) can talk to.
+> **Summary:** The Front Desk / Receptionist. It exposes HTTP REST endpoints that outside clients (Swagger, web browsers, desktop UIs) can communicate with.
 
-* **Controllers:** Listen for incoming network requests (such as `GET /api/tenants` or `POST /api/tenants`).
-* **Swagger UI:** A built-in web page (`/swagger`) that allows you to click buttons and test your API right in your browser.
+#### 1. Why Did We Write This Layer?
+The API layer handles all **network protocol concerns**:
+* Routing URLs (`/api/Tenant`, `/api/Apartment`).
+* Deserializing JSON text from HTTP requests into C# objects (`[FromBody] TenantDto`).
+* Formatting HTTP responses and assigning correct HTTP status codes (`200 OK`, `400 Bad Request`, `404 Not Found`, `500 Server Error`).
+* Generating Swagger documentation.
+
+#### 2. Anatomy of the Presentation Layer Code
+
+##### A. Base Controller — [`BaseController.cs`](src/Core/ApartmentManagement.API/Controllers/BaseController.cs)
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public abstract class BaseController : ControllerBase
+{
+    protected readonly ILogger<BaseController> Logger;
+
+    protected BaseController(ILogger<BaseController> logger)
+    {
+        Logger = logger;
+    }
+
+    protected IActionResult HandleResponse<T>(T result, string message = null)
+    {
+        if (result == null)
+        {
+            Logger.LogWarning("Requested resource not found.");
+            return NotFound(new { message = "Resource not found.", success = false });
+        }
+        return Ok(result);
+    }
+
+    protected IActionResult HandleError(Exception ex, string message = "An unexpected error occurred.")
+    {
+        Logger.LogError(ex, message);
+        return StatusCode(500, new { message = message, success = false, error = ex.Message });
+    }
+}
+```
+* **Why did we write `BaseController`?**
+  Instead of repeating `try-catch` blocks and error logging in all 7 controllers, `BaseController` centralizes error logging, ensures consistent JSON responses, and returns standard status codes automatically.
+
+##### B. API Controller — e.g. [`TenantController.cs`](src/Core/ApartmentManagement.API/Controllers/TenantController.cs)
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class TenantController : BaseController
+{
+    private readonly ITenantService _tenantService;
+
+    // Asks DI for ITenantService
+    public TenantController(ILogger<TenantController> logger, ITenantService tenantService)
+        : base(logger)
+    {
+        _tenantService = tenantService;
+    }
+
+    [HttpPost]
+    public IActionResult Create([FromBody] TenantDto tenantDto)
+    {
+        try
+        {
+            if (tenantDto == null)
+            {
+                return BadRequest(new { message = "Invalid tenant data.", success = false });
+            }
+            _tenantService.CreateTenant(tenantDto);
+            return HandleResponse(new { message = "Tenant created successfully.", success = true });
+        }
+        catch (Exception ex)
+        {
+            return HandleError(ex, "Failed to create tenant.");
+        }
+    }
+
+    [HttpGet("{id}")]
+    public IActionResult GetById(int id)
+    {
+        try
+        {
+            var tenant = _tenantService.GetTenantById(id);
+            return HandleResponse(tenant);
+        }
+        catch (Exception ex)
+        {
+            return HandleError(ex, $"Failed to retrieve tenant with ID {id}.");
+        }
+    }
+}
+```
+
+##### C. The Wiring Center / Composition Root — [`Program.cs`](src/Core/ApartmentManagement.API/Program.cs)
+`Program.cs` is where all the puzzle pieces are plugged together at startup:
+
+```csharp
+// 1. Tell EF Core to connect to SQL Server
+services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
+// 2. Register Repositories: Whenever ITenantRepository is requested, supply TenantRepository
+services.AddScoped<ITenantRepository, TenantRepository>();
+services.AddScoped<IApartmentRepository, ApartmentRepository>();
+// ...
+
+// 3. Register Services: Whenever ITenantService is requested, supply TenantServiceImpl
+services.AddScoped<ITenantService, TenantServiceImpl>();
+services.AddScoped<IApartmentService, ApartmentServiceImpl>();
+// ...
+
+// 4. Register AutoMapper
+services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// 5. Register Swagger Documentation
+services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Apartment Management API", Version = "v1" });
+});
+```
 
 ---
 
-## 3. Core Concepts Explained in Plain English
+## 3. Deep Dive: How the Layers Interact With Each Other
+
+### Interaction Map & Object Flow
+
+```
+[Outside World] ──(JSON String)──> [Layer 4: Controller]
+                                           │
+                                     (TenantDto)
+                                           ▼
+                                 [Layer 2: Service]
+                                    │             │
+                             (Uses AutoMapper)  (Calls Interface)
+                                    │             │
+                              (Tenant Entity)     ▼
+                                    │       [Layer 1: Domain Interface]
+                                    ▼             ▲
+                          [Layer 3: Repository]───┘ (Implements Contract)
+                                    │
+                              (AppDbContext)
+                                    ▼
+                         [SQL Server Database]
+```
+
+### Why Layer 2 Does Not Depend on Layer 3 (Dependency Inversion)
+Look closely at the arrows above:
+* `TenantServiceImpl` (Layer 2) **never mentions** `TenantRepository` or `AppDbContext` (Layer 3).
+* Instead, `TenantServiceImpl` only depends on the **Interface** `ITenantRepository` (Layer 1).
+* `TenantRepository` (Layer 3) also depends on `ITenantRepository` (Layer 1) to implement it.
+
+This is the **Dependency Inversion Principle (DIP)**:
+> High-level business logic (Services) should not depend on low-level database details (SQL Repositories). Both should depend on abstractions (Interfaces).
+
+### Why Layer 4 Does Not Talk to the Database
+If a controller talked directly to the database:
+1. You couldn't validate complex business rules before saving.
+2. You couldn't reuse the database code for other controllers or desktop screens.
+3. If the database was slow or down, the API would have no clean way to handle the error.
+
+---
+
+## 4. Core Concepts Explained in Plain English
 
 ### Why do we use Interfaces? (The Wall Socket Analogy)
 Think of an electrical wall outlet in your home:
-* The wall socket is an **Interface** (`ITenantRepository`). It specifies the shape of the plug and voltage.
+* The wall socket is an **Interface** (`ITenantRepository`). It specifies the shape of the holes and the voltage.
 * The device plugged in is the **Implementation** (`TenantRepository`). It could be a lamp, a fan, or a phone charger.
 
-Because your house is built with standard socket interfaces, you can replace a lamp with a fan without breaking your walls.
+Because your house is built with standard socket interfaces, you can unplug a lamp and plug in a fan without rewiring your house.
 
 Similarly, in our code:
-`TenantServiceImpl` only knows `ITenantRepository`. If tomorrow we decide to switch from Microsoft SQL Server to SQLite, PostgreSQL, or an in-memory testing database, we only write a new repository class. **We do not have to rewrite any business logic!**
+`TenantServiceImpl` only knows `ITenantRepository`. If tomorrow we decide to switch from Microsoft SQL Server to SQLite, PostgreSQL, or an in-memory testing database, we only write a new repository class. **We do not have to change a single line of business logic!**
 
 ---
 
@@ -268,79 +516,90 @@ Similarly, in our code:
 
 ### What is Dependency Injection (DI)?
 
-Without Dependency Injection (tightly coupled):
+#### Without Dependency Injection (Tightly Coupled - Bad Practice):
 ```csharp
-// Bad practice: creating dependencies directly
 public class TenantServiceImpl
 {
-    private TenantRepository _repo = new TenantRepository(); // Glued forever!
+    // Hardcoded! Glued forever to TenantRepository and SQL Server!
+    private TenantRepository _repo = new TenantRepository(new AppDbContext(...));
 }
 ```
 
-With Dependency Injection (clean & decoupled):
+#### With Dependency Injection (Decoupled - Clean Architecture):
 ```csharp
-// Good practice: asking for the dependency via constructor
 public class TenantServiceImpl
 {
     private readonly ITenantRepository _repo;
 
+    // Asks for whatever implementation exists via constructor
     public TenantServiceImpl(ITenantRepository repo)
     {
         _repo = repo;
     }
 }
 ```
-In `Startup.cs`, .NET is told once: *"Whenever any class asks for `ITenantRepository`, create and supply a `TenantRepository`."* .NET takes care of creating and passing it automatically.
+In `Program.cs`, .NET is configured once: *"Whenever any class asks for `ITenantRepository`, create and provide a `TenantRepository`."* .NET creates, passes, and disposes of the objects automatically.
 
 ---
 
-## 4. Step-by-Step Walkthrough: Registering a New Tenant
+### How `BaseController` Standardizes API Responses
+Instead of every controller returning raw inconsistent data, `BaseController` ensures that:
+* Successful results return `HTTP 200 OK` with JSON data.
+* Missing resources return `HTTP 404 Not Found` with `{ "message": "Resource not found.", "success": false }`.
+* Crashes or exceptions return `HTTP 500 Internal Server Error` with error messages logged to the console.
 
-Let's trace the complete lifecycle of adding a new tenant:
+---
 
-```
-[1. User / Swagger UI]
-         │ Sends HTTP POST with JSON: { "fullName": "Ahmad Ali", "phoneNumber": "777123456" }
-         ▼
-[2. API Controller]
-         │ Receives data as TenantDto and calls _tenantService.CreateTenant(tenantDto)
-         ▼
-[3. TenantServiceImpl (Application Layer)]
-         │ 1. Validates input
-         │ 2. Converts TenantDto -> Tenant Entity using AutoMapper
-         │ 3. Calls _tenantRepository.Add(tenantEntity)
-         ▼
-[4. TenantRepository (Infrastructure Layer)]
-         │ 1. Adds entity to _context.Tenants
-         │ 2. Calls _context.SaveChanges()
-         ▼
-[5. EF Core & SQL Server Database]
-         │ Executes: INSERT INTO Tenants (FullName, PhoneNumber) VALUES ('Ahmad Ali', '777123456')
-         ▼
-[6. Response]
-           Returns HTTP 200 OK / 201 Created back to the user!
+## 5. Step-by-Step Walkthrough: Registering a New Tenant
+
+Let's trace the complete journey of adding a new tenant from Swagger to SQL Server:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 👤 User (Swagger UI)
+    participant Ctrl as 🚪 TenantController (Layer 4)
+    participant Svc as 🧠 TenantServiceImpl (Layer 2)
+    participant Map as 🔄 AutoMapper (Layer 2)
+    participant Repo as 🏗️ TenantRepository (Layer 3)
+    participant DB as 🗄️ SQL Server Database
+
+    User->>Ctrl: 1. HTTP POST /api/Tenant { "fullName": "Ahmed", "phoneNumber": "777123456" }
+    Note over Ctrl: Deserializes JSON into TenantDto
+    Ctrl->>Svc: 2. Calls _tenantService.CreateTenant(tenantDto)
+    Note over Svc: Validates DTO is not null
+    Svc->>Map: 3. Calls _mapper.Map<Tenant>(tenantDto)
+    Map-->>Svc: 4. Returns Tenant Entity { Id: 0, FullName: "Ahmed", PhoneNumber: "777123456" }
+    Svc->>Repo: 5. Calls _tenantRepository.Add(tenantEntity)
+    Repo->>DB: 6. _context.Tenants.Add(tenantEntity) & _context.SaveChanges()
+    Note over DB: Executes: INSERT INTO Tenants (FullName, PhoneNumber) VALUES ('Ahmed', '777123456')
+    DB-->>Repo: 7. SQL Server generates primary key (Id = 1)
+    Repo-->>Svc: 8. Return success
+    Svc-->>Ctrl: 9. Return success
+    Ctrl-->>User: 10. HTTP 200 OK { message: "Tenant created successfully.", success: true }
 ```
 
 ---
 
-## 5. Codebase Map (Where to Find What)
+## 6. Codebase Map (Where to Find What)
 
-| Layer / Folder | Purpose | What is inside? |
+| Layer / Folder | Purpose | Key Files Inside |
 | :--- | :--- | :--- |
-| **`src/Core/Domain/Entities/`** | Database Entities | `Tenant.cs`, `Apartment.cs`, `PaymentRecord.cs`, `Issue.cs`, `Parcel.cs`, `User.cs`, `Role.cs` |
-| **`src/Core/Domain/Repository/`** | Storage Interfaces | `ITenantRepository.cs`, `IApartmentRepository.cs`, `IPaymentRecordRepository.cs`, etc. |
-| **`src/Core/Application/DTOs/`** | Transfer Models | `TenantDto.cs`, `ApartmentDto.cs`, `PaymentRecordDto.cs`, etc. |
-| **`src/Core/Application/Interfaces/`** | Service Interfaces | `ITenantService.cs`, `IApartmentService.cs`, `IPaymentRecordService.cs`, etc. |
-| **`src/Core/Application/ServiceImpl/`** | Business Logic | `TenantServiceImpl.cs`, `ApartmentServiceImpl.cs`, etc. |
-| **`src/Core/Application/Mappings/`** | AutoMapper Config | `MappingConfig.cs` |
-| **`src/Core/Infrastructure/Data/`** | Database Context | `AppDbContext.cs` |
-| **`src/Core/Infrastructure/Repositories/`** | Real SQL Queries | `TenantRepository.cs`, `ApartmentRepository.cs`, etc. |
-| **`ApartmentManagement.API/`** | Presentation API | `Startup.cs`, `Program.cs`, `appsettings.json`, Controllers |
+| **`src/Core/Domain/Entities/`** | Database Entities | [`Tenant.cs`](src/Core/Domain/Entities/Tenant.cs), [`Apartment.cs`](src/Core/Domain/Entities/Apartment.cs), [`PaymentRecord.cs`](src/Core/Domain/Entities/PaymentRecord.cs), [`Issue.cs`](src/Core/Domain/Entities/Issue.cs), [`Parcel.cs`](src/Core/Domain/Entities/Parcel.cs), [`User.cs`](src/Core/Domain/Entities/User.cs), [`Role.cs`](src/Core/Domain/Entities/Role.cs) |
+| **`src/Core/Domain/Entities/Base/`** | Common Entity Base | [`BaseEntity.cs`](src/Core/Domain/Entities/Base/BaseEntity.cs) (Contains `Id`, `CreatedAt`, `UpdatedAt`) |
+| **`src/Core/Domain/Repository/`** | Storage Contracts | [`ITenantRepository.cs`](src/Core/Domain/Repository/ITenantRepository.cs), [`IApartmentRepository.cs`](src/Core/Domain/Repository/IApartmentRepository.cs), [`IPaymentRecordRepository.cs`](src/Core/Domain/Repository/IPaymentRecordRepository.cs), etc. |
+| **`src/Core/Application/DTOs/`** | Safe Network Models | [`TenantDto.cs`](src/Core/Application/DTOs/TenantDto.cs), [`ApartmentDto.cs`](src/Core/Application/DTOs/ApartmentDto.cs), [`PaymentRecordDto.cs`](src/Core/Application/DTOs/PaymentRecordDto.cs), etc. |
+| **`src/Core/Application/Interfaces/`** | Service Interfaces | [`ITenantService.cs`](src/Core/Application/Interfaces/ITenantService.cs), [`IApartmentService.cs`](src/Core/Application/Interfaces/IApartmentService.cs), etc. |
+| **`src/Core/Application/ServiceImpl/`** | Business Logic | [`TenantServiceImpl.cs`](src/Core/Application/ServiceImpl/TenantServiceImpl.cs), [`ApartmentServiceImpl.cs`](src/Core/Application/ServiceImpl/ApartmentServiceImpl.cs), etc. |
+| **`src/Core/Application/Mappings/`** | AutoMapper Config | [`MappingConfig.cs`](src/Core/Application/Mappings/MappingConfig.cs) |
+| **`src/Core/Infrastructure/Data/`** | Database Context | [`AppDbContext.cs`](src/Core/Infrastructure/Data/AppDbContext.cs) (EF Core Fluent API configs) |
+| **`src/Core/Infrastructure/Repositories/`** | Real SQL Execution | [`TenantRepository.cs`](src/Core/Infrastructure/Repositories/TenantRepository.cs), [`ApartmentRepository.cs`](src/Core/Infrastructure/Repositories/ApartmentRepository.cs), etc. |
+| **`src/Core/ApartmentManagement.API/`** | Presentation API | [`Program.cs`](src/Core/ApartmentManagement.API/Program.cs), [`appsettings.json`](src/Core/ApartmentManagement.API/appsettings.json), [`Controllers/`](src/Core/ApartmentManagement.API/Controllers/) |
 | **`ApartmentManagmentSchema.sql`** | SQL Database Script | Table creation, foreign keys, and default role seeds |
 
 ---
 
-## 6. Beginner Cheat Sheet & Glossary
+## 7. Beginner Cheat Sheet & Glossary
 
 * **Entity:** A C# class directly matching a database table (e.g., `Tenant`).
 * **DTO (Data Transfer Object):** A clean C# class containing only the data sent over the network (e.g., `TenantDto`).
