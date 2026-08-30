@@ -1,3 +1,12 @@
+## [0.5.1](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.5.0...v0.5.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* **api:** enable runtime roll-forward and fix launchSettings format ([feab62f](https://github.com/Medo-SM/ApartmentManagementSystem/commit/feab62fd8b597b8721557092bab6be4eded82648))
+
+
+
 # [0.5.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.4.0...v0.5.0) (2026-08-24)
 
 
@@ -31,16 +40,6 @@
 ### Bug Fixes
 
 * resolve broken project references for infrastructure ([6b32c67](https://github.com/Medo-SM/ApartmentManagementSystem/commit/6b32c67951add63dc2288122870a5992f4b328b2))
-
-
-
-# [0.2.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.1.1...v0.2.0) (2026-08-08)
-
-
-### Features
-
-* **domain:** add repository interfaces for core domain entities ([8e4d2a4](https://github.com/Medo-SM/ApartmentManagementSystem/commit/8e4d2a4a6d8ee5d4f9429a9c6eb5312904b3a82c))
-* **infrastructure:** implement repository layer and AppDbContext ([4fbd705](https://github.com/Medo-SM/ApartmentManagementSystem/commit/4fbd705241df6b50bec5d746a611238930af5f33))
 
 
 
