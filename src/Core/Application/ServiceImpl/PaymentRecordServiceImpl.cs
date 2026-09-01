@@ -2,7 +2,7 @@ using Application.DTOs;
 using Application.Interfaces;
 using ApartmentManagement.Core.Domain.Entities;
 using AutoMapper;
-using Domain.Repository;
+using Domain.IRepository;
 using System;
 using System.Collections.Generic;
 

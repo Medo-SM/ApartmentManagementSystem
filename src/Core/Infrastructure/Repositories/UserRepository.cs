@@ -1,5 +1,5 @@
 ﻿using ApartmentManagementSystem.Core.Domain.Entities;
-using Domain.Repository;
+using Domain.IRepository;
 using Infrastructure.Data;
 using System.Collections.Generic;
 using System.Linq;

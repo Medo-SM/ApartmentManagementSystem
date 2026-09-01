@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Application.Interfaces;
 using Application.ServiceImpl;
-using Domain.Repository;
+using Domain.IRepository;
 using Infrastructure.Data;
 using ApartmentManagementSystem.Infrastructure.Repositories;
 

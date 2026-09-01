@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ApartmentManagementSystem.Core.Domain.Entities;
-using Domain.Repository;
+using Domain.IRepository;
 using Infrastructure.Data;
 
 namespace ApartmentManagementSystem.Infrastructure.Repositories

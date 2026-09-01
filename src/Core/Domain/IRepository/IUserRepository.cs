@@ -5,14 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Repository
+namespace Domain.IRepository
 {
-    public interface IRoleRepository
+    public interface IUserRepository
     {
-        void Add(Role role);
-        void Update(Role role);
+        void Add(User user);
+        void Update(User user);
         void Delete(int Id);
-        Role? GetById(int Id);
-        List<Role> GetAll();
+        User? GetById(int Id);
+        List<User> GetAll();
     }
 }

@@ -5,14 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Repository
+namespace Domain.IRepository
 {
-    public interface IParcelRepository
+    public interface IIssueRepository
     {
-        void Add(Parcel parcel);
-        void Update(Parcel parcel);
+        void Add(Issue issue);
+        void Update(Issue issue);
         void Delete(int Id);
-        Parcel? GetById(int Id);
-        List<Parcel> GetAll();
+        Issue? GetById(int Id);
+        List<Issue> GetAll();
     }
 }
