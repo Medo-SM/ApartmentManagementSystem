@@ -1,3 +1,12 @@
+# [0.6.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.5.2...v0.6.0) (2026-09-01)
+
+
+### Features
+
+* seed default roles on role creation ([2c31ae0](https://github.com/Medo-SM/ApartmentManagementSystem/commit/2c31ae046ed0eb1417e11744425b1a1c506dd4fb))
+
+
+
 ## [0.5.2](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.5.1...v0.5.2) (2026-09-01)
 
 
@@ -31,15 +40,6 @@
 ### Features
 
 * **presentation:** add the full presentation layer upto the db migration ([039fd73](https://github.com/Medo-SM/ApartmentManagementSystem/commit/039fd739f78fd83ec2ee471b42b3bf1d25742bed))
-
-
-
-# [0.3.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.2.1...v0.3.0) (2026-08-22)
-
-
-### Features
-
-* **application:** implement service layer with ([1fddcd0](https://github.com/Medo-SM/ApartmentManagementSystem/commit/1fddcd057ee75ab77c49eeca689c5ffac51577b9))
 
 
 
