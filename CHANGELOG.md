@@ -1,3 +1,12 @@
+## [0.5.2](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.5.1...v0.5.2) (2026-09-01)
+
+
+### Bug Fixes
+
+* **api:** stop client-supplied id from reaching entity on writes ([72dec29](https://github.com/Medo-SM/ApartmentManagementSystem/commit/72dec299cd7f9203f171bfc3d947d50d0d63693c))
+
+
+
 ## [0.5.1](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.5.0...v0.5.1) (2026-08-30)
 
 
@@ -31,15 +40,6 @@
 ### Features
 
 * **application:** implement service layer with ([1fddcd0](https://github.com/Medo-SM/ApartmentManagementSystem/commit/1fddcd057ee75ab77c49eeca689c5ffac51577b9))
-
-
-
-## [0.2.1](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.2.0...v0.2.1) (2026-08-15)
-
-
-### Bug Fixes
-
-* resolve broken project references for infrastructure ([6b32c67](https://github.com/Medo-SM/ApartmentManagementSystem/commit/6b32c67951add63dc2288122870a5992f4b328b2))
 
 
 
