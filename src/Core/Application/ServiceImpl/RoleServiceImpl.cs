@@ -5,6 +5,7 @@ using AutoMapper;
 using Domain.IRepository;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Application.ServiceImpl
 {
@@ -22,8 +23,24 @@ namespace Application.ServiceImpl
         public void CreateRole(RoleDto roleDto)
         {
             if (roleDto == null) throw new ArgumentNullException(nameof(roleDto));
+
+            string[] defaultRoles = { "Building Owner", "Building Manager", "Tenant" };
+
+            var existingNames = _roleRepository.GetAll()
+                .Select(r => r.RoleName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var name in defaultRoles)
+            {
+                if (!existingNames.Contains(name))
+                {
+                    _roleRepository.Add(new Role { RoleName = name });
+                }
+            }
+
             var roleEntity = _mapper.Map<Role>(roleDto);
             _roleRepository.Add(roleEntity);
+
         }
 
         public RoleDto? GetRoleById(int id)
