@@ -43,6 +43,7 @@ namespace Application.ServiceImpl
         {
             if (paymentRecordDto == null) throw new ArgumentNullException(nameof(paymentRecordDto));
             var paymentRecordEntity = _mapper.Map<PaymentRecord>(paymentRecordDto);
+            paymentRecordEntity.Id = paymentRecordDto.Id; // Ensure the ID is set for the update
             _paymentRecordRepository.Update(paymentRecordEntity);
         }
 

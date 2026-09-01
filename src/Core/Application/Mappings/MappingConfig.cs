@@ -16,6 +16,22 @@ namespace Application.Mappings
             CreateMap<Parcel, ParcelDto>().ReverseMap();
             CreateMap<PaymentRecord, PaymentRecordDto>().ReverseMap();
             CreateMap<Role, RoleDto>().ReverseMap();
+
+            // Make the IDs not mapped when mapping from DTO to Entity
+            CreateMap<UserDto, User>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            CreateMap<ApartmentDto, Apartment>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            CreateMap<TenantDto, Tenant>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            CreateMap<IssueDto, Issue>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            CreateMap<ParcelDto, Parcel>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            CreateMap<PaymentRecordDto, PaymentRecord>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            CreateMap<RoleDto, Role>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());           
         }
     }
 }

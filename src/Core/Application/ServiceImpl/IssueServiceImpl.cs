@@ -43,6 +43,7 @@ namespace Application.ServiceImpl
         {
             if (issueDto == null) throw new ArgumentNullException(nameof(issueDto));
             var issueEntity = _mapper.Map<Issue>(issueDto);
+            issueEntity.Id = issueDto.Id; // Ensure the ID is set for the update
             _issueRepository.Update(issueEntity);
         }
 

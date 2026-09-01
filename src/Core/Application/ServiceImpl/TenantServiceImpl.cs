@@ -43,6 +43,7 @@ namespace Application.ServiceImpl
         {
             if (tenantDto == null) throw new ArgumentNullException(nameof(tenantDto));
             var tenantEntity = _mapper.Map<Tenant>(tenantDto);
+            tenantEntity.Id = tenantDto.Id; // Ensure the ID is set for the update
             _tenantRepository.Update(tenantEntity);
         }
 

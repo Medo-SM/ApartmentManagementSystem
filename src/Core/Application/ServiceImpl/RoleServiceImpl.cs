@@ -43,6 +43,7 @@ namespace Application.ServiceImpl
         {
             if (roleDto == null) throw new ArgumentNullException(nameof(roleDto));
             var roleEntity = _mapper.Map<Role>(roleDto);
+            roleEntity.Id = roleDto.Id; // Ensure the ID is set for the update
             _roleRepository.Update(roleEntity);
         }
 

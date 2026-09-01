@@ -43,6 +43,7 @@ namespace Application.ServiceImpl
         {
             if (userDto == null) throw new ArgumentNullException(nameof(userDto));
             var userEntity = _mapper.Map<User>(userDto);
+            userEntity.Id = userDto.Id; // Ensure the ID is set for the update
             _userRepository.Update(userEntity);
         }
 
