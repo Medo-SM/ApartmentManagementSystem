@@ -50,6 +50,7 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
+    <li><a href="#testing">Testing</a></li>
     <li><a href="#documentation">Documentation</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -198,6 +199,22 @@ curl -X 'POST' 'https://localhost:5001/api/User' \
     "roleId": 2,
     "isActive": true
   }'
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- TESTING -->
+## Testing
+
+The solution includes a unit test project (`src/Tests/`) using **xUnit**, **Moq**, and the real
+**AutoMapper** mapping profile. It unit-tests all 7 service implementations — verifying repository
+delegation, null handling, mapped return values, entity &lt;-&gt; DTO round-trips, and `RoleServiceImpl`'s
+default role-seeding logic. No database is required; all repositories are mocked.
+
+```bash
+dotnet test src/Tests/
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
