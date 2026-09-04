@@ -81,12 +81,13 @@ independent from data access and UI frameworks:
 ```
 ApartmentManagementSystem/
 ├── src/
+│   ├── Tests/                      # xUnit + Moq unit tests for all service implementations
 │   └── Core/
-│       ├── Domain/             # Core entities & repository interfaces
-│       ├── Application/        # DTOs, service interfaces, implementations & AutoMapper mappings
-│       └── Infrastructure/     # EF Core, AppDbContext & repository implementations
-├── ApartmentManagement.API/     # ASP.NET Core Web API & Swagger endpoints
-└── documentation/              # SWE & ITPM project documentation and diagrams
+│       ├── ApartmentManagement.API/ # ASP.NET Core Web API & Swagger endpoints
+│       ├── Domain/                 # Core entities & repository interfaces
+│       ├── Application/            # DTOs, service interfaces, implementations & AutoMapper mappings
+│       └── Infrastructure/         # EF Core, AppDbContext & repository implementations
+└── documentation/                  # SWE & ITPM project documentation and diagrams
 ```
 
 > 📖 **New to Clean Architecture?** Check out our beginner-friendly guide: [**BACKEND_ARCHITECTURE.md**](BACKEND_ARCHITECTURE.md) for a step-by-step explanation and code walkthrough.
