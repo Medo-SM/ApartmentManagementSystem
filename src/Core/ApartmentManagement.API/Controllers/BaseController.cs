@@ -1,3 +1,4 @@
+using Application.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -41,6 +42,17 @@ namespace ApartmentManagement.API.Controllers
         protected IActionResult HandleError(Exception ex, string message = "An unexpected error occurred.")
         {
             Logger.LogError(ex, message);
+
+            var mapping = ApiErrorMapper.TryMap(ex);
+            if (mapping != null)
+            {
+                return StatusCode(mapping.StatusCode, new
+                {
+                    message = mapping.Message,
+                    success = false
+                });
+            }
+
             return StatusCode(500, new
             {
                 message = message,
