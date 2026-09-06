@@ -1,3 +1,12 @@
+## [0.7.1](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.7.0...v0.7.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* **api:** return clear messages on duplicate and FK request failure ([f80d856](https://github.com/Medo-SM/ApartmentManagementSystem/commit/f80d85607a5c99e97b898c82e7e30b60467f80c1))
+
+
+
 # [0.7.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.6.0...v0.7.0) (2026-09-05)
 
 
@@ -37,15 +46,6 @@
 ### Bug Fixes
 
 * **api:** enable runtime roll-forward and fix launchSettings format ([feab62f](https://github.com/Medo-SM/ApartmentManagementSystem/commit/feab62fd8b597b8721557092bab6be4eded82648))
-
-
-
-# [0.5.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.4.0...v0.5.0) (2026-08-24)
-
-
-### Features
-
-* add intial database migrations ([6f93ca7](https://github.com/Medo-SM/ApartmentManagementSystem/commit/6f93ca740cadc48277a7385093f7e732f9b49440))
 
 
 
