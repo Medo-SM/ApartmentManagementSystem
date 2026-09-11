@@ -1,5 +1,9 @@
 # Automated Tests Plan
 
+> **Status:** Done (Merged in v0.7.0 / PR #8)
+
+---
+
 ## Strategy
 
 Test the **Application layer** (7 service implementations) using **xUnit** + **Moq**. Each service follows the same CRUD pattern, so the test structure is consistent.

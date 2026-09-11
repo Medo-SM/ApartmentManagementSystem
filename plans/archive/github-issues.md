@@ -1,6 +1,8 @@
 # GitHub Issues
 
-Copy and paste each issue below into GitHub.
+> **Status:** Archived (Tasks resolved in v0.7.0)
+
+---
 
 ---
 

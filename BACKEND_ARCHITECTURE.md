@@ -25,6 +25,7 @@
 7. [Beginner Cheat Sheet & Glossary](#7-beginner-cheat-sheet--glossary)
 8. [Detailed Layer Interaction Walkthrough](#8-detailed-layer-interaction-walkthrough)
 9. [Every Class Type Explained](#9-every-class-type-explained)
+10. [Testing Explained (The Safety Net)](#10-testing-explained-the-safety-net)
 
 ---
 
@@ -598,6 +599,7 @@ sequenceDiagram
 | **`src/Core/Infrastructure/Repositories/`** | Real SQL Execution | [`TenantRepository.cs`](src/Core/Infrastructure/Repositories/TenantRepository.cs), [`ApartmentRepository.cs`](src/Core/Infrastructure/Repositories/ApartmentRepository.cs), etc. |
 | **`src/Core/ApartmentManagement.API/`** | Presentation API | [`Program.cs`](src/Core/ApartmentManagement.API/Program.cs), [`appsettings.json`](src/Core/ApartmentManagement.API/appsettings.json), [`Controllers/`](src/Core/ApartmentManagement.API/Controllers/) |
 | **`ApartmentManagmentSchema.sql`** | SQL Database Script | Table creation, foreign keys, and default role seeds |
+| **`src/Tests/`** | Unit Tests (no database needed) | [`TestFixtures.cs`](src/Tests/Fixtures/TestFixtures.cs), [`ApartmentServiceImplTests.cs`](src/Tests/Services/ApartmentServiceImplTests.cs), [`MappingTests.cs`](src/Tests/MappingTests.cs), etc. |
 
 ---
 
@@ -845,3 +847,88 @@ Defines `DbSet<T>` properties (one per table) and configures table rules (unique
 | **Controller** | Presentation | HTTP endpoints |
 | **BaseController** | Presentation | Shared error/response handling |
 | **AppDbContext** | Infrastructure | EF Core database session |
+
+---
+
+## 10. Testing Explained (The Safety Net)
+
+> **Summary:** Tests prove that the Head Chef (Application services) does its job correctly — without needing the real kitchen (SQL Server) — so we can refactor with confidence.
+
+### Why Did We Write Tests?
+
+Back to the restaurant: what if the Head Chef changes a recipe and the dish comes out wrong? You would not find out until a customer complains. A **health inspector** prevents that — they check every recipe before anyone can order it.
+
+That is exactly what automated tests do:
+
+1. **They catch mistakes immediately.** If a service stops calling the repository, or returns the wrong fields, the test fails the moment you run it — not weeks later in production.
+2. **They let you refactor safely.** Our `ApartmentServiceImpl` is free to change how it works internally, as long as it still passes the same tests.
+3. **They run in milliseconds.** Because the database is replaced with a **fake (mock)**, tests never need SQL Server to be installed, running, or seeded.
+
+### The Test Stack (`src/Tests/`)
+
+| Tool | What It Does In Our Tests |
+| :--- | :--- |
+| **xUnit** | The test framework. Defines `[Fact]` methods — one test per method. |
+| **Moq** | Builds fake repositories (`Mock<ITenantRepository>`) so we test the *service* in isolation, not the database. |
+| **AutoMapper (real profile)** | Uses the *actual* `MappingProfile` from the app, so mapping tests verify the real rules. |
+| **TestFixtures.cs** | One shared place with the real mapper plus ready-made valid DTOs and entities — so tests don't duplicate sample data. |
+
+Together they unit-test **all 7 service implementations** (User, Apartment, Tenant, PaymentRecord, Issue, Parcel, Role) plus the DTO ↔ Entity mappings.
+
+### Anatomy of a Test (Arrange, Act, Assert)
+
+Every test follows the same 3-phase rhythm. Look at this real test from [`ApartmentServiceImplTests.cs`](src/Tests/Services/ApartmentServiceImplTests.cs):
+
+```csharp
+[Fact]
+public void CreateApartment_ValidDto_CallsRepositoryAdd()
+{
+    // 1. ARRANGE — set up the stage
+    var dto = TestFixtures.CreateValidApartmentDto();       // a ready-made valid apartment
+    var service = new ApartmentServiceImpl(_mockRepo.Object, _mapper); // the chef under test
+
+    // 2. ACT — perform the action we want to check
+    service.CreateApartment(dto);
+
+    // 3. ASSERT — prove the expected thing happened
+    _mockRepo.Verify(r => r.Add(It.IsAny<Apartment>()), Times.Once);
+}
+```
+
+Line by line:
+
+| Step | What it means |
+| :--- | :--- |
+| `[Fact]` | "This method is one test." |
+| `ARRANGE` | Build the inputs: a valid `ApartmentDto`, and a `_mockRepo` created in setup. |
+| `ACT` | Call the real service method — the line of production code we are testing. |
+| `ASSERT` | Unashamedly ask Moq: *"was `Add` called exactly once?"* If not, the test fails. |
+| `It.IsAny<Apartment>()` | "Any apartment object counts" — we only care that `Add` happened. |
+
+### What the Tests Verify
+
+| What is tested | Real Example |
+| :--- | :--- |
+| **Repository delegation** | `CreateApartment_ValidDto_CallsRepositoryAdd` — the service hands the data to the repo. |
+| **Null handling** | `CreateApartment_NullDto_ThrowsArgumentNullException` — garbage in → clear exception out. |
+| **Mapped return values** | `GetApartmentById_ExistingId_ReturnsDto` — the DTO service returns matches the stored entity field-by-field. |
+| **DTO ↔ Entity round-trips** | `MappingTests` — map entity → DTO → entity and check nothing is lost. |
+| **Role seeding logic** | `RoleServiceImpl` tests verify the default-role behavior that `RoleServiceImpl` implements. |
+
+### How to Run the Tests
+
+```bash
+dotnet test src/Tests/
+```
+
+You will see output like `Passed! - Failed: 0, Passed: 64`. No SQL Server is required — Moq stands in for every repository, and `TestFixtures.CreateMapper()` supplies the real mapper.
+
+### Where Do Tests Fit in Our Architecture?
+
+Tests live **beside** the 4 layers, not inside them. They "sit outside the kitchen window" and watch:
+
+```
+[TestProject] ── calls ──> [Service (Layer 2)] ── calls ──> [Mock Repository (instead of Layer 3)]
+```
+
+Because services depend only on **interfaces** (Dependency Inversion), a test can hand the service a Moq fake instead of a real SQL repository — the service never knows the difference. This is why our architecture choice makes the project easy to test in the first place.

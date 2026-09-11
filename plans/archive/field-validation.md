@@ -1,5 +1,9 @@
 # Field Validation Plan
 
+> **Status:** Done (Merged in v0.7.0 / PR #8)
+
+---
+
 ## Approach
 
 Use **Data Annotation attributes** on DTOs. The `[ApiController]` attribute on `BaseController` causes ASP.NET to **automatically validate model state** and return `400 Bad Request` with detailed error messages before controller code runs.

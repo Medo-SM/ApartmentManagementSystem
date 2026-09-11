@@ -1,5 +1,10 @@
 # Three-Layer Validation Plan (Entity · DTO · Logic)
 
+> **Status:** Proposed (In Review)  
+> **Note:** Plan requested by Eng. Mohammed Tala'at for adding DB CHECK constraints, DTO validation, and service-level business rules.
+
+---
+
 ## Goal
 
 Enforce data integrity at every boundary so invalid data can never reach the database, and every failure surfaces a clear **400/409** response in Swagger.

@@ -1,5 +1,9 @@
 # Clear Error Messages Plan
 
+> **Status:** Done (Merged in v0.7.1 / PR #11)
+
+---
+
 ## Problem
 
 Every controller catches exceptions and delegates to `BaseController.HandleError`, which always returns **HTTP 500** with the raw exception message:
