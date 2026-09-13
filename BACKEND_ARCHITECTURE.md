@@ -20,6 +20,7 @@
    - [What is a DTO and why do we use AutoMapper?](#what-is-a-dto-and-why-do-we-use-automapper)
    - [What is Dependency Injection (DI)?](#what-is-dependency-injection-di)
    - [How BaseController Standardizes API Responses](#how-basecontroller-standardizes-api-responses)
+   - [How Clear Error Messages Work](#how-clear-error-messages-work)
 5. [Step-by-Step Walkthrough: Registering a New Tenant](#5-step-by-step-walkthrough-registering-a-new-tenant)
 6. [Codebase Map (Where to Find What)](#6-codebase-map-where-to-find-what)
 7. [Beginner Cheat Sheet & Glossary](#7-beginner-cheat-sheet--glossary)
@@ -65,35 +66,50 @@ In a well-run restaurant, duties are strictly separated into **specialized roles
 Here is how our solution ([`ApartmentManagementSystem.sln`](ApartmentManagementSystem.sln)) is structured:
 
 ```mermaid
-flowchart TD
-    subgraph Presentation["1. Presentation Layer (ApartmentManagement.API)"]
-        Swagger["Swagger UI / HTTP Clients"]
-        Controllers["Controllers (TenantController.cs)"]
-        BaseController["BaseController.cs (Error & Response Standardizer)"]
-        Program["Program.cs (Dependency Injection Setup)"]
-    end
+sequenceDiagram
+    autonumber
+    actor User as Swagger / HTTP Client
+    participant AspNet as ASP.NET Routing +<br/>JSON Deserializer
+    participant Ctrl as TenantController.cs<br/>(Layer 4 · Presentation)
+    participant SvcI as ITenantService<br/>(Layer 2 · Interface)
+    participant Svc as TenantServiceImpl.cs<br/>(Layer 2 · The Brain)
+    participant Map as IMapper (AutoMapper)
+    participant RepoI as ITenantRepository<br/>(Domain Interface · Layer 1)
+    participant Repo as TenantRepository.cs<br/>(Layer 3 · Infrastructure)
+    participant DbCtx as AppDbContext<br/>(EF Core Session)
+    participant SQL as SQL Server Database
 
-    subgraph Application["2. Application Layer (src/Core/Application)"]
-        Services["Services (TenantServiceImpl.cs - Business Logic)"]
-        DTOs["DTOs (TenantDto.cs - Safe Network Models)"]
-        AutoMapper["AutoMapper (MappingConfig.cs - Object Converter)"]
-    end
-
-    subgraph Domain["3. Domain Layer (src/Core/Domain) - The Center"]
-        Entities["Entities (Tenant.cs, Apartment.cs)"]
-        BaseEntity["BaseEntity.cs (Id, CreatedAt, UpdatedAt)"]
-        RepoContracts["Repository Interfaces (ITenantRepository.cs)"]
-    end
-
-    subgraph Infrastructure["4. Infrastructure Layer (src/Core/Infrastructure)"]
-        EFCore["EF Core AppDbContext.cs (SQL Server Mappings)"]
-        Repositories["Repositories (TenantRepository.cs - Real SQL Queries)"]
-    end
-
-    Presentation --> Application
-    Presentation --> Infrastructure
-    Application --> Domain
-    Infrastructure --> Domain
+    User->>AspNet: HTTP POST /api/Tenant<br/>Body: {"fullName", "phoneNumber"}
+    AspNet->>Ctrl: Deserializes JSON → TenantDto<br/>Invokes Create(tenantDto)
+    activate Ctrl
+    Ctrl->>SvcI: _tenantService.CreateTenant(tenantDto)<br/>── only knows the interface ──
+    activate SvcI
+    SvcI->>Svc: Delegates to TenantServiceImpl
+    activate Svc
+    Svc->>Svc: Validates: tenantDto == null →<br/>ArgumentNullException
+    Svc->>Map: _mapper.Map<Tenant>(tenantDto)
+    activate Map
+    Map-->>Svc: Tenant entity (Id = 0)
+    deactivate Map
+    Svc->>RepoI: _tenantRepository.Add(entity)<br/>── only knows the interface ──
+    activate RepoI
+    RepoI->>Repo: Delegates to TenantRepository
+    activate Repo
+    Repo->>DbCtx: _context.Tenants.Add(entity)
+    DbCtx->>SQL: _context.SaveChanges()<br/>→ INSERT INTO Tenants ...
+    SQL-->>DbCtx: Row inserted (Id = 1)
+    DbCtx-->>Repo: Saved entity (Id = 1)
+    deactivate Repo
+    Repo-->>RepoI: done
+    deactivate RepoI
+    RepoI-->>Svc: done
+    deactivate Svc
+    Svc-->>SvcI: done
+    deactivate SvcI
+    SvcI-->>Ctrl: done
+    Ctrl->>Ctrl: HandleResponse(...) → 200 OK
+    Ctrl-->>User: HTTP 200 OK<br/>{ message, success = true }
+    deactivate Ctrl
 ```
 
 ---
@@ -550,6 +566,82 @@ Instead of every controller returning raw inconsistent data, `BaseController` en
 * Successful results return `HTTP 200 OK` with JSON data.
 * Missing resources return `HTTP 404 Not Found` with `{ "message": "Resource not found.", "success": false }`.
 * Crashes or exceptions return `HTTP 500 Internal Server Error` with error messages logged to the console.
+
+### How Clear Error Messages Work
+
+> **Summary:** SQL Server sometimes rejects a row. Instead of showing the user a cryptic database message, `BaseController` translates it into a clean, human-readable error with the correct HTTP status code.
+
+When we first built the API, a request that violated a database rule returned the raw SQL message as an `HTTP 500`:
+
+```json
+{
+  "message": "Failed to create apartment.",
+  "success": false,
+  "error": "Cannot insert duplicate key row in object 'dbo.Apartments' with unique index 'IX_Apartments_UnitNumber'. The duplicate key value is (A101)."
+}
+```
+
+That is confusing: the message reveals database internals, and "duplicate" is really a `409`, not a `500`. Since **v0.7.1**, `BaseController.HandleError` was changed to ask a translator (`ApiErrorMapper`) before returning a response, so the same failure now returns:
+
+```json
+{
+  "message": "An apartment with this Unit Number already exists.",
+  "success": false
+}
+```
+
+with status `409 Conflict`.
+
+#### What Triggers It
+
+The trigger is always a failed save in a **repository** (`_context.SaveChanges()`). There are three cases:
+
+| What happened in the database | Example | Status code returned |
+| :--- | :--- | :--- |
+| **Duplicate unique value** | Posting/updating a record that hits one of the 5 unique indexes | `409 Conflict` |
+| **Foreign key violation** | Referencing a `TenantId`, `ApartmentId`, or `RoleId` that does not exist | `400 Bad Request` |
+| **Anything else** | Any other unexpected failure | `500 Internal Server Error` (unchanged behavior) |
+
+The 5 unique indexes that can trigger a `409`:
+`IX_Apartments_UnitNumber`, `IX_Users_Username`, `IX_Users_Email`, `IX_Users_TenantId` (the 1-to-1 user–tenant link), and `IX_Roles_RoleName`.
+
+#### Where the Magic Happens (Two Files)
+
+The logic lives in **two places** — one brand new, one modified:
+
+1. **`src/Core/Application/ErrorHandling/ApiErrorMapper.cs`** (Application layer) — the *translator*. A static class with one entry point: `ApiErrorMapper.TryMap(Exception)`.
+2. **`src/Core/ApartmentManagement.API/Controllers/BaseController.cs`** (Presentation layer) — *modified to call it*. Because all 7 controllers inherit `BaseController`, every endpoint gets the fix with zero per-controller changes.
+
+#### The Error Flow, Step by Step
+
+1. The repository calls `_context.SaveChanges()`.
+2. SQL Server rejects the row; EF Core wraps the error in a `DbUpdateException`.
+3. The exception bubbles up through the service layer (services have no `try/catch`) into the controller's `catch` block.
+4. The controller calls `HandleError(ex, "Failed to ...")`.
+5. `BaseController` logs the full error, then calls `ApiErrorMapper.TryMap(ex)`.
+6. `TryMap` peeks at the inner exception message:
+   * If it looks like a **duplicate key** → returns a `409` mapping with a friendly message.
+   * If it looks like a **foreign key** conflict → returns a `400` mapping telling the user to check the supplied IDs.
+   * Otherwise → returns `null`, and `BaseController` falls back to the old `500` (which still includes the raw `error` for debugging).
+
+#### How the Translator Picks the Right Message
+
+`ApiErrorMapper` reads the SQL Server message and extracts the index name using regexes. The index name follows the pattern `IX_<Entity>_<Field>`, which maps to a friendly phrase:
+
+| Index name | Friendly message |
+| :--- | :--- |
+| `IX_Apartments_UnitNumber` | "An apartment with this Unit Number already exists." |
+| `IX_Users_Username` | "A user with this Username already exists." |
+| `IX_Users_Email` | "A user with this Email already exists." |
+| `IX_Users_TenantId` | "A user is already linked to this Tenant." |
+| `IX_Roles_RoleName` | "A role with this name already exists." |
+| *(any unknown index)* | "A record with the same unique value already exists." |
+
+#### Why Match on Messages Instead of `SqlException`?
+
+The mapper lives in the **Application** layer, which does **not** reference the SQL Server provider — so the `SqlException` type is not even available there. Because `ApiErrorMapper` only reads the exception's *message text*, it can also be unit-tested **without a database**: the tests in `src/Tests/ErrorHandling/ApiErrorMapperTests.cs` simply build plain exceptions containing the same SQL error strings.
+
+> **Important caveat:** SQL Server error text is English by default, and the friendly messages depend on EF Core's `IX_<Entity>_<Field>` naming convention. If the database provider or index names change, the regexes in `ApiErrorMapper.cs` must be revisited.
 
 ---
 
