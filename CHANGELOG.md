@@ -1,3 +1,12 @@
+# [0.8.0](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.7.1...v0.8.0) (2026-09-18)
+
+
+### Features
+
+* Reorder the SRS into the official final guide, and add the baseline document ([2247141](https://github.com/Medo-SM/ApartmentManagementSystem/commit/224714130b7dff3f22d2184c1ba27f39f78da30c))
+
+
+
 ## [0.7.1](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.7.0...v0.7.1) (2026-09-06)
 
 
@@ -37,15 +46,6 @@
 ### Bug Fixes
 
 * **api:** stop client-supplied id from reaching entity on writes ([72dec29](https://github.com/Medo-SM/ApartmentManagementSystem/commit/72dec299cd7f9203f171bfc3d947d50d0d63693c))
-
-
-
-## [0.5.1](https://github.com/Medo-SM/ApartmentManagementSystem/compare/v0.5.0...v0.5.1) (2026-08-30)
-
-
-### Bug Fixes
-
-* **api:** enable runtime roll-forward and fix launchSettings format ([feab62f](https://github.com/Medo-SM/ApartmentManagementSystem/commit/feab62fd8b597b8721557092bab6be4eded82648))
 
 
 
