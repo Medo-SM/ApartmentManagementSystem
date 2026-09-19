@@ -1,0 +1,74 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.0.3 Chrome/140.0.7339.249 Electron/38.7.0 Safari/537.36" version="29.0.3">
+  <diagram name="Page-1" id="e1ktISk9ehQGsRFPyiUn">
+    <mxGraphModel dx="466" dy="814" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="bibLQl0VepxUoRdOotK9-1" value="" style="ellipse;" vertex="1" parent="1">
+          <mxGeometry x="220" y="430" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-2" value="Open" style="rounded=1;arcSize=20;strokeWidth=2" vertex="1" parent="1">
+          <mxGeometry x="199" y="518" width="55" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-3" value="Assigned" style="rounded=1;arcSize=20;strokeWidth=2" vertex="1" parent="1">
+          <mxGeometry x="26" y="632" width="82" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-4" value="InProgress" style="rounded=1;arcSize=20;strokeWidth=2" vertex="1" parent="1">
+          <mxGeometry x="20" y="770" width="93" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-5" value="Resolved" style="rounded=1;arcSize=20;strokeWidth=2" vertex="1" parent="1">
+          <mxGeometry x="105" y="884" width="83" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-6" value="" style="ellipse;shape=endState;" vertex="1" parent="1">
+          <mxGeometry x="200" y="998" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-7" value="Manager logs new issue" style="curved=1;startArrow=none;;exitX=0.48;exitY=1;entryX=0.5;entryY=0;rounded=0;" edge="1" parent="1" source="bibLQl0VepxUoRdOotK9-1" target="bibLQl0VepxUoRdOotK9-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-8" value="Staff member selected" style="curved=1;startArrow=none;;exitX=0;exitY=0.75;entryX=0.49;entryY=0;rounded=0;" edge="1" parent="1" source="bibLQl0VepxUoRdOotK9-2" target="bibLQl0VepxUoRdOotK9-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="66" y="595" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-9" value="Work starts" style="curved=1;startArrow=none;;exitX=0.49;exitY=1;entryX=0.5;entryY=0;rounded=0;" edge="1" parent="1" source="bibLQl0VepxUoRdOotK9-3" target="bibLQl0VepxUoRdOotK9-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-10" value="Staff enters resolution notes" style="curved=1;startArrow=none;;exitX=0.5;exitY=1;entryX=0.16;entryY=0;rounded=0;" edge="1" parent="1" source="bibLQl0VepxUoRdOotK9-4" target="bibLQl0VepxUoRdOotK9-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="66" y="847" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-11" value="Manager reopens [Explanation provided]" style="curved=1;startArrow=none;;exitX=0.84;exitY=0;entryX=0.5;entryY=1;rounded=0;" edge="1" parent="1" source="bibLQl0VepxUoRdOotK9-5" target="bibLQl0VepxUoRdOotK9-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="227" y="847" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-12" value="Issue Closed / Archived" style="curved=1;startArrow=none;;exitX=0.5;exitY=1;entryX=-0.03;entryY=0.13;rounded=0;" edge="1" parent="1" source="bibLQl0VepxUoRdOotK9-5" target="bibLQl0VepxUoRdOotK9-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="147" y="961" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bibLQl0VepxUoRdOotK9-13" value="Issue Cancelled" style="curved=1;startArrow=none;;exitX=1.01;exitY=0.83;entryX=0.97;entryY=0.34;rounded=0;" edge="1" parent="1" source="bibLQl0VepxUoRdOotK9-2" target="bibLQl0VepxUoRdOotK9-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="347" y="595" />
+              <mxPoint x="347" y="961" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
