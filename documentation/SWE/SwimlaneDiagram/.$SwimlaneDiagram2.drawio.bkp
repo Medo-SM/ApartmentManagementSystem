@@ -58,9 +58,6 @@
             <Array as="points" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="qsJXI3yRkZ2M8E5GfOfW-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="0hSJP93NfiPXPVWzd1rh-115" source="0hSJP93NfiPXPVWzd1rh-87" target="0hSJP93NfiPXPVWzd1rh-117">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
         <mxCell id="0hSJP93NfiPXPVWzd1rh-87" value="Update Status to &#39;In Progress&#39;" style="whiteSpace=wrap;strokeWidth=2;" parent="0hSJP93NfiPXPVWzd1rh-115" vertex="1">
           <mxGeometry x="560" y="179.75" width="260" height="51.5" as="geometry" />
         </mxCell>
